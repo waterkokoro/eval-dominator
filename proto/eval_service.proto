@@ -1,0 +1,187 @@
+syntax = "proto3";
+
+package eval.v1;
+
+option go_package = "eval-dominator/backend/internal/infrastructure/grpc/gen/evalv1;evalv1";
+
+// EvalService 只提供 OpenCompass 原子能力，不维护业务任务状态。
+service EvalService {
+  // HealthCheck 用于 Go 后端启动和巡检时确认 Core 可用。
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+
+  // ValidateEvalConfig 校验评测配置是否具备执行条件。
+  rpc ValidateEvalConfig(ValidateEvalConfigRequest) returns (ValidateEvalConfigResponse);
+
+  // BuildEvalConfig 将标准化请求转换为 OpenCompass 可执行配置。
+  rpc BuildEvalConfig(BuildEvalConfigRequest) returns (BuildEvalConfigResponse);
+
+  // ExecuteEval 执行一次 OpenCompass 评测能力，由 Go 后端控制调用时机和状态。
+  rpc ExecuteEval(ExecuteEvalRequest) returns (ExecuteEvalResponse);
+
+  // ParseEvalResult 解析 OpenCompass 输出产物，尽量返回完整指标和引用路径。
+  rpc ParseEvalResult(ParseEvalResultRequest) returns (ParseEvalResultResponse);
+
+  // CancelEval 终止指定任务正在运行的 OpenCompass 子进程组。
+  rpc CancelEval(CancelEvalRequest) returns (CancelEvalResponse);
+}
+
+message HealthCheckRequest {
+  string request_id = 1;
+}
+
+message HealthCheckResponse {
+  bool ok = 1;
+  string service = 2;
+  string version = 3;
+  string message = 4;
+}
+
+message ValidateEvalConfigRequest {
+  string request_id = 1;
+  EvalConfig config = 2;
+}
+
+message ValidateEvalConfigResponse {
+  bool valid = 1;
+  repeated ValidationError errors = 2;
+}
+
+message BuildEvalConfigRequest {
+  string request_id = 1;
+  EvalConfig config = 2;
+}
+
+message BuildEvalConfigResponse {
+  bool ok = 1;
+  string config_path = 2;
+  string output_dir = 3;
+  repeated Artifact artifacts = 4;
+  CoreError error = 5;
+}
+
+message ExecuteEvalRequest {
+  string request_id = 1;
+  string eval_task_id = 2;
+  EvalConfig config = 3;
+  string config_path = 4;
+  string output_dir = 5;
+}
+
+message ExecuteEvalResponse {
+  bool ok = 1;
+  string output_dir = 2;
+  repeated Artifact artifacts = 3;
+  CoreError error = 4;
+}
+
+message ParseEvalResultRequest {
+  string request_id = 1;
+  string eval_task_id = 2;
+  string output_dir = 3;
+}
+
+message ParseEvalResultResponse {
+  bool ok = 1;
+  EvalResult result = 2;
+  CoreError error = 3;
+}
+
+message CancelEvalRequest {
+  string request_id = 1;
+  string eval_task_id = 2;
+}
+
+message CancelEvalResponse {
+  // ok=true 表示 Core 找到了对应进程并已请求终止；
+  // running=false 表示当时无运行中进程（可能已结束或未启动）。
+  bool ok = 1;
+  bool running = 2;
+  CoreError error = 3;
+}
+
+message EvalConfig {
+  ModelConfig model = 1;
+  DatasetConfig dataset = 2;
+  RuntimeConfig runtime = 3;
+  map<string, string> extra_params = 4;
+}
+
+message ModelConfig {
+  ModelType type = 1;
+  string provider = 2;
+  string model_name = 3;
+  string base_url = 4;
+  string api_key = 5;
+  map<string, string> params = 6;
+}
+
+message DatasetConfig {
+  DatasetType type = 1;
+  string name = 2;
+  string path = 3;
+  map<string, string> params = 4;
+}
+
+message RuntimeConfig {
+  string work_dir = 1;
+  int32 timeout_seconds = 2;
+  int32 max_workers = 3;
+  bool keep_raw_outputs = 4;
+}
+
+message EvalResult {
+  repeated Metric metrics = 1;
+  repeated Artifact artifacts = 2;
+  string raw_result_path = 3;
+  string report_path = 4;
+  string log_path = 5;
+  map<string, string> metadata = 6;
+}
+
+message Metric {
+  string name = 1;
+  double value = 2;
+  string display_name = 3;
+  string description = 4;
+  map<string, string> extra = 5;
+}
+
+message Artifact {
+  ArtifactType type = 1;
+  string name = 2;
+  string path = 3;
+  string description = 4;
+}
+
+message ValidationError {
+  string field = 1;
+  string message = 2;
+}
+
+message CoreError {
+  string code = 1;
+  string message = 2;
+  string detail = 3;
+}
+
+enum ModelType {
+  MODEL_TYPE_UNSPECIFIED = 0;
+  MODEL_TYPE_REMOTE_API = 1;
+  MODEL_TYPE_LOCAL_HF = 2;
+}
+
+enum DatasetType {
+  DATASET_TYPE_UNSPECIFIED = 0;
+  DATASET_TYPE_OPENCOMPASS_DEMO = 1;
+  DATASET_TYPE_OPENCOMPASS_STANDARD = 2;
+  DATASET_TYPE_CUSTOM = 3;
+}
+
+enum ArtifactType {
+  ARTIFACT_TYPE_UNSPECIFIED = 0;
+  ARTIFACT_TYPE_CONFIG = 1;
+  ARTIFACT_TYPE_RAW_RESULT = 2;
+  ARTIFACT_TYPE_REPORT = 3;
+  ARTIFACT_TYPE_LOG = 4;
+  ARTIFACT_TYPE_OTHER = 5;
+}

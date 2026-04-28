@@ -1,0 +1,19 @@
+server:
+  host: "127.0.0.1"
+  port: 50051
+  max_workers: 4
+
+opencompass:
+  source_dir: "../resources/opencompass"
+  dataset_dir: "../resources/opencompass-data"
+  default_dataset: "demo"
+  default_model_type: "remote_api"
+
+runtime:
+  work_dir: "../runtime/outputs"
+  log_dir: "../runtime/logs/core"
+  timeout_seconds: 3600
+  keep_raw_outputs: true
+
+log:
+  level: "info"

@@ -1,0 +1,40 @@
+server:
+  host: "127.0.0.1"
+  port: 8080
+  read_timeout_seconds: 30
+  write_timeout_seconds: 30
+
+jwt:
+  issuer: "eval-dominator"
+  # 部署前必须改成只有你知道的随机字符串，例如 `openssl rand -hex 32`。
+  secret: "replace-with-local-secret"
+  expire_hours: 24
+
+auth:
+  # 启动时如果 users 表里没有该用户名，就用下面这个密码建一个 bcrypt 账号。
+  # 强烈建议首次登录后通过 POST /auth/change-password 修改，并把这里同步成新密码。
+  default_admin_username: "admin"
+  default_admin_password: "admin123"
+
+database:
+  driver: "sqlite"
+  path: "../runtime/eval_dominator.db"
+  max_open_connections: 1
+  max_idle_connections: 1
+
+core:
+  grpc_address: "127.0.0.1:50051"
+  connect_timeout_seconds: 5
+  call_timeout_seconds: 3600
+  retry_count: 0
+
+eval:
+  default_dataset_type: "opencompass_demo"
+  default_timeout_seconds: 3600
+  output_dir: "../runtime/outputs"
+  save_api_key_enabled: true
+  mask_api_key_on_response: true
+
+log:
+  level: "info"
+  dir: "../runtime/logs/backend"

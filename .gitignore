@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local config and secrets
+.env
+.env.*
+!*.example
+backend/config/config.yaml
+core/config/config.yaml
+
+# Runtime outputs / state（DB、产物、日志一律本地化，永远不要 commit）
+runtime/
+!runtime/.gitkeep
+!runtime/logs/
+!runtime/logs/.gitkeep
+!runtime/outputs/
+!runtime/outputs/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+
+# OpenCompass run artifacts: 它会在 cwd 下生成临时 params/中间产物
+tmp/
+core/tmp/
+icl_inference_output/
+.cache/
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+*.exe
+*.out
+
+# Logs
+*.log
+logs/
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+.cursor/
+*.swp
