@@ -256,3 +256,13 @@ curl -X POST http://127.0.0.1:8080/api/auth/change-password \
 ## License
 
 [MIT](./LICENSE)
+
+## Star History
+
+<a href="https://www.star-history.com/#waterkokoro/eval-dominator&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=waterkokoro/eval-dominator&type=Date&theme=dark"/>
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=waterkokoro/eval-dominator&type=Date"/>
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=waterkokoro/eval-dominator&type=Date"/>
+  </picture>
+</a>
