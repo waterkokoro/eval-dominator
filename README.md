@@ -1,10 +1,35 @@
-# Eval Dominator
+<p align="center">
+  <img src="./eval-dominator.svg" alt="Eval Dominator" width="480"/>
+</p>
 
-> 一个轻量、本地优先、面向「OpenAI 兼容接口」的大模型评测平台 ── 把 [OpenCompass](https://github.com/open-compass/opencompass) 的能力包装成一个能用浏览器跑的小工具。
->
-> **状态：MVP，迭代中。** 目前只在本机单用户场景验证，不建议直接公网部署。
->
-> [English](./README.en.md) · [中文](./README.md)
+<h1 align="center">Eval Dominator</h1>
+
+<p align="center">
+  一个轻量、本地优先、面向 OpenAI 兼容接口的大模型评测平台<br/>
+  把 <a href="https://github.com/open-compass/opencompass">OpenCompass</a> 的能力包装成一个能用浏览器跑的小工具
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-v0.1.0--mvp-blue" alt="version"/>
+  <img src="https://img.shields.io/badge/status-MVP%20%C2%B7%20iterating-orange" alt="status"/>
+  <a href="https://github.com/open-compass/opencompass"><img src="https://img.shields.io/badge/OpenCompass-0.5.2-2c3e50" alt="OpenCompass 0.5.2"/></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="license"/></a>
+  <br/>
+  <img src="https://img.shields.io/badge/Go-1.21%2B-00ADD8?logo=go&logoColor=white" alt="Go"/>
+  <img src="https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white" alt="Node"/>
+  <img src="https://img.shields.io/badge/Vue-2.x-4FC08D?logo=vue.js&logoColor=white" alt="Vue"/>
+  <img src="https://img.shields.io/badge/Backend-Gin-00ACD7" alt="Gin"/>
+  <img src="https://img.shields.io/badge/Storage-SQLite-003B57?logo=sqlite&logoColor=white" alt="SQLite"/>
+  <img src="https://img.shields.io/badge/Transport-gRPC-4D4D4D?logo=grpc&logoColor=white" alt="gRPC"/>
+  <img src="https://img.shields.io/badge/UI-ElementUI-409EFF" alt="Element UI"/>
+</p>
+
+<p align="center">
+  <a href="./README.md">中文</a> · <a href="./README.en.md">English</a>
+</p>
+
+> **状态：MVP（v0.1.0-mvp），迭代中。** 目前只在本机单用户场景验证，不建议直接公网部署。
 
 ## 它是什么
 
@@ -164,6 +189,24 @@ curl -X POST http://127.0.0.1:8080/api/auth/change-password \
 - [ ] 本地 HuggingFace 模型 + PPL 数据集
 - [ ] 多任务并发与资源调度
 - [ ] 多用户、空间隔离
+
+## 致谢与引用
+
+本项目基于 [OpenCompass 0.5.2](https://github.com/open-compass/opencompass) 构建——感谢 OpenCompass 提供的稳定、丰富的评测工具链与数据集。
+
+- 代码仓库：<https://github.com/open-compass/opencompass>
+- 在线文档：<https://opencompass.readthedocs.io/>
+
+如果你在研究 / 报告 / 文章中引用了本项目的评测结果，请同时引用 OpenCompass：
+
+```bibtex
+@misc{2023opencompass,
+  title        = {OpenCompass: A Universal Evaluation Platform for Foundation Models},
+  author       = {OpenCompass Contributors},
+  howpublished = {\url{https://github.com/open-compass/opencompass}},
+  year         = {2023}
+}
+```
 
 ## License
 

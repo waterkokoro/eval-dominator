@@ -1,10 +1,35 @@
-# Eval Dominator
+<p align="center">
+  <img src="./eval-dominator.svg" alt="Eval Dominator" width="480"/>
+</p>
 
-> A lightweight, local-first web playground that wraps [OpenCompass](https://github.com/open-compass/opencompass) into something you can drive from a browser.
->
-> **Status: MVP, actively iterating.** Designed for single-machine, single-user usage at the moment. Not hardened for public deployment.
->
-> [English](./README.en.md) · [中文](./README.md)
+<h1 align="center">Eval Dominator</h1>
+
+<p align="center">
+  A lightweight, local-first web playground that wraps<br/>
+  <a href="https://github.com/open-compass/opencompass">OpenCompass</a> into something you can drive from a browser.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-v0.1.0--mvp-blue" alt="version"/>
+  <img src="https://img.shields.io/badge/status-MVP%20%C2%B7%20iterating-orange" alt="status"/>
+  <a href="https://github.com/open-compass/opencompass"><img src="https://img.shields.io/badge/OpenCompass-0.5.2-2c3e50" alt="OpenCompass 0.5.2"/></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="license"/></a>
+  <br/>
+  <img src="https://img.shields.io/badge/Go-1.21%2B-00ADD8?logo=go&logoColor=white" alt="Go"/>
+  <img src="https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white" alt="Node"/>
+  <img src="https://img.shields.io/badge/Vue-2.x-4FC08D?logo=vue.js&logoColor=white" alt="Vue"/>
+  <img src="https://img.shields.io/badge/Backend-Gin-00ACD7" alt="Gin"/>
+  <img src="https://img.shields.io/badge/Storage-SQLite-003B57?logo=sqlite&logoColor=white" alt="SQLite"/>
+  <img src="https://img.shields.io/badge/Transport-gRPC-4D4D4D?logo=grpc&logoColor=white" alt="gRPC"/>
+  <img src="https://img.shields.io/badge/UI-ElementUI-409EFF" alt="Element UI"/>
+</p>
+
+<p align="center">
+  <a href="./README.md">中文</a> · <a href="./README.en.md">English</a>
+</p>
+
+> **Status: MVP (v0.1.0-mvp), actively iterating.** Designed for single-machine, single-user usage at the moment. Not hardened for public deployment.
 
 ## What it is
 
@@ -164,6 +189,24 @@ The detail page surfaces: stage progress bar, live log (auto-tailing the freshes
 - [ ] Local HuggingFace models + PPL datasets
 - [ ] Concurrent task scheduling
 - [ ] Multi-user + workspace isolation
+
+## Acknowledgements & Citation
+
+This project is built on top of [OpenCompass 0.5.2](https://github.com/open-compass/opencompass). Huge thanks to the OpenCompass team for the solid evaluation pipeline and dataset coverage.
+
+- Repository: <https://github.com/open-compass/opencompass>
+- Docs: <https://opencompass.readthedocs.io/>
+
+If you publish numbers produced by this project, please also cite OpenCompass:
+
+```bibtex
+@misc{2023opencompass,
+  title        = {OpenCompass: A Universal Evaluation Platform for Foundation Models},
+  author       = {OpenCompass Contributors},
+  howpublished = {\url{https://github.com/open-compass/opencompass}},
+  year         = {2023}
+}
+```
 
 ## License
 
