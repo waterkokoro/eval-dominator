@@ -31,42 +31,6 @@
 
 > **Status: MVP (v0.1.0-mvp), actively iterating.** Designed for single-machine, single-user usage at the moment. Not hardened for public deployment.
 
-## Screenshots
-
-> The task list is the landing page — covers create / search / filter.
-
-<p align="center">
-  <img src="./eval-img/en/task-list.png" alt="Task list" width="900"/>
-</p>
-
-> Task detail: stage progress, model / dataset metadata, metric visualization, artifact preview & download.
-
-<p align="center">
-  <img src="./eval-img/en/task-detail01.png" alt="Task detail - overview" width="900"/>
-</p>
-
-> The detail page embeds a live log that always tails the freshest infer subset.
-
-<p align="center">
-  <img src="./eval-img/en/task-detail-log.png" alt="Task detail - log" width="900"/>
-</p>
-
-> Submit evaluation: pick model source (API / local), dataset, and runtime parameters.
-
-<p align="center">
-  <img src="./eval-img/en/submit.png" alt="Submit eval - model and dataset" width="900"/>
-</p>
-
-<p align="center">
-  <img src="./eval-img/en/submit02.png" alt="Submit eval - dataset and runtime" width="900"/>
-</p>
-
-> Models: manage reusable OpenAI-compatible presets; API keys are stored once and rendered masked.
-
-<p align="center">
-  <img src="./eval-img/en/model.png" alt="Models" width="900"/>
-</p>
-
 ## What it is
 
 Three layers, talking to each other through stable contracts:
@@ -75,51 +39,55 @@ Three layers, talking to each other through stable contracts:
 - **Backend** — Go + Gin + SQLite: accounts, task orchestration, persistence, REST API.
 - **Core** — Python + gRPC + OpenCompass: actually drives OpenCompass via subprocess; called by the backend over gRPC.
 
-### Call architecture
-
 ```mermaid
 flowchart LR
-    subgraph browser ["Browser"]
-      UI["Vue 2 + ElementUI<br/>i18n: zh-CN / en-US"]
-    end
+    UI["Browser<br/>Vue 2 + ElementUI"]
+    BE["Go Backend :8080<br/>Gin + JWT"]
+    Core["Python Core :50051<br/>gRPC EvalService"]
+    OC["OpenCompass CLI"]
+    DB[("SQLite<br/>users / models / datasets / tasks")]
+    FS["runtime/<br/>summary · log · predictions"]
 
-    subgraph backend ["Go Backend :8080"]
-      Gin["Gin REST API"]
-      AppSvc["application services<br/>auth · model · dataset · eval"]
-    end
-
-    subgraph core ["Python Core :50051"]
-      Grpc["gRPC EvalService"]
-      Adapter["OpenCompass adapter<br/>+ subprocess runner"]
-    end
-
-    subgraph oc ["OpenCompass subprocess"]
-      Cli["opencompass CLI"]
-    end
-
-    subgraph storage ["Local storage"]
-      DB[("SQLite<br/>users · models · datasets · eval_tasks")]
-      FS["runtime/task_id/<br/>summary · infer · predictions"]
-    end
-
-    UI -->|"HTTP /api Bearer JWT"| Gin
-    Gin --> AppSvc
-    AppSvc <--> DB
-    AppSvc -->|"gRPC CreateTask / GetStatus / Cancel"| Grpc
-    Grpc --> Adapter
-    Adapter -->|"spawn process group + mmengine .py config"| Cli
-    Cli -->|"writes artifacts"| FS
-    Adapter -->|"tail log / parse summary"| FS
-    AppSvc -.->|"artifact preview / download"| FS
+    UI -->|HTTP| BE
+    BE <--> DB
+    BE -->|gRPC| Core
+    Core -->|subprocess| OC
+    OC -->|writes| FS
+    BE -.->|preview / download| FS
 ```
 
-One-line version:
+## Screenshots
 
-```
-Browser ──HTTP──▶ Go Backend ──gRPC──▶ Python Core ──subprocess──▶ OpenCompass CLI
-                    │                                                │
-                  SQLite                                          runtime/
-```
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/task-list.png"><img src="./eval-img/en/task-list.png" alt="Task list" width="100%"/></a>
+      <br/><sub><b>Task list</b><br/>create · search · filter</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/task-detail01.png"><img src="./eval-img/en/task-detail01.png" alt="Task detail" width="100%"/></a>
+      <br/><sub><b>Task detail</b><br/>stage progress · metrics · artifacts</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/task-detail-log.png"><img src="./eval-img/en/task-detail-log.png" alt="Live log" width="100%"/></a>
+      <br/><sub><b>Live log</b><br/>auto-tails the freshest infer subset</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/submit.png"><img src="./eval-img/en/submit.png" alt="Submit · model" width="100%"/></a>
+      <br/><sub><b>Submit · model</b><br/>API / local · presets</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/submit02.png"><img src="./eval-img/en/submit02.png" alt="Submit · dataset" width="100%"/></a>
+      <br/><sub><b>Submit · dataset</b><br/>GEN / PPL · runtime params</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/model.png"><img src="./eval-img/en/model.png" alt="Models" width="100%"/></a>
+      <br/><sub><b>Models</b><br/>OpenAI-compatible presets · masked keys</sub>
+    </td>
+  </tr>
+</table>
 
 ## What works (MVP)
 

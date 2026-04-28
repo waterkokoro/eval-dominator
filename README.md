@@ -31,42 +31,6 @@
 
 > **状态：MVP（v0.1.0-mvp），迭代中。** 目前只在本机单用户场景验证，不建议直接公网部署。
 
-## 界面预览
-
-> 任务列表是首页，覆盖创建/查询/筛选等主要操作。
-
-<p align="center">
-  <img src="./eval-img/zh/task-list.png" alt="任务列表" width="900"/>
-</p>
-
-> 任务详情：阶段进度、模型 / 数据集元信息、指标可视化、产物预览/下载。
-
-<p align="center">
-  <img src="./eval-img/zh/task-detail01.png" alt="任务详情 - 概览" width="900"/>
-</p>
-
-> 详情页内嵌实时日志，自动跟随最新 infer 子集。
-
-<p align="center">
-  <img src="./eval-img/zh/task-detail-log.png" alt="任务详情 - 日志" width="900"/>
-</p>
-
-> 提交评测：选择模型来源（API / 本地）、数据集、运行参数。
-
-<p align="center">
-  <img src="./eval-img/zh/submit.png" alt="提交评测 - 模型与数据集" width="900"/>
-</p>
-
-<p align="center">
-  <img src="./eval-img/zh/submit02.png" alt="提交评测 - 数据集与运行参数" width="900"/>
-</p>
-
-> 模型管理：维护可复用的 OpenAI 兼容预设，API Key 脱敏回显。
-
-<p align="center">
-  <img src="./eval-img/zh/model.png" alt="模型管理" width="900"/>
-</p>
-
 ## 它是什么
 
 把"评测一个 LLM"的流程拆成三层，每一层之间都有稳定的契约：
@@ -75,51 +39,55 @@
 - **Backend** (Go + Gin + SQLite)：账号、任务编排与持久化、对外暴露 REST API。
 - **Core** (Python + gRPC + OpenCompass)：实际驱动 OpenCompass 跑模型评测，被 Backend 通过 gRPC 调用。
 
-### 调用架构
-
 ```mermaid
 flowchart LR
-    subgraph browser ["浏览器 / Browser"]
-      UI["Vue 2 + ElementUI<br/>i18n: zh-CN / en-US"]
-    end
+    UI["浏览器<br/>Vue 2 + ElementUI"]
+    BE["Go Backend :8080<br/>Gin + JWT"]
+    Core["Python Core :50051<br/>gRPC EvalService"]
+    OC["OpenCompass CLI"]
+    DB[("SQLite<br/>users / models / datasets / tasks")]
+    FS["runtime/<br/>summary · log · predictions"]
 
-    subgraph backend ["Go Backend :8080"]
-      Gin["Gin REST API"]
-      AppSvc["业务服务 application<br/>auth · model · dataset · eval"]
-    end
-
-    subgraph core ["Python Core :50051"]
-      Grpc["gRPC EvalService"]
-      Adapter["OpenCompass adapter<br/>+ subprocess runner"]
-    end
-
-    subgraph oc ["OpenCompass 子进程"]
-      Cli["opencompass CLI"]
-    end
-
-    subgraph storage ["本地存储 / Local storage"]
-      DB[("SQLite<br/>users · models · datasets · eval_tasks")]
-      FS["runtime/任务ID/<br/>summary · infer · predictions"]
-    end
-
-    UI -->|"HTTP /api Bearer JWT"| Gin
-    Gin --> AppSvc
-    AppSvc <--> DB
-    AppSvc -->|"gRPC CreateTask / GetStatus / Cancel"| Grpc
-    Grpc --> Adapter
-    Adapter -->|"spawn 进程组 + mmengine .py 配置"| Cli
-    Cli -->|"写入产物"| FS
-    Adapter -->|"tail log / 解析 summary"| FS
-    AppSvc -.->|"产物预览 / 下载"| FS
+    UI -->|HTTP| BE
+    BE <--> DB
+    BE -->|gRPC| Core
+    Core -->|subprocess| OC
+    OC -->|写入产物| FS
+    BE -.->|预览 / 下载| FS
 ```
 
-简化版（一行版）：
+## 界面预览
 
-```
-浏览器 ──HTTP──▶ Go Backend ──gRPC──▶ Python Core ──subprocess──▶ OpenCompass CLI
-                    │                                               │
-                  SQLite                                        runtime/
-```
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <a href="./eval-img/zh/task-list.png"><img src="./eval-img/zh/task-list.png" alt="任务列表" width="100%"/></a>
+      <br/><sub><b>任务列表</b><br/>创建 · 查询 · 筛选</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/zh/task-detail01.png"><img src="./eval-img/zh/task-detail01.png" alt="任务详情" width="100%"/></a>
+      <br/><sub><b>任务详情</b><br/>阶段进度 · 指标 · 产物</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/zh/task-detail-log.png"><img src="./eval-img/zh/task-detail-log.png" alt="实时日志" width="100%"/></a>
+      <br/><sub><b>实时日志</b><br/>自动跟最新 infer 子集</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" align="center">
+      <a href="./eval-img/zh/submit.png"><img src="./eval-img/zh/submit.png" alt="提交评测 · 模型" width="100%"/></a>
+      <br/><sub><b>提交评测 · 模型</b><br/>API / 本地 · 预设</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/zh/submit02.png"><img src="./eval-img/zh/submit02.png" alt="提交评测 · 数据集" width="100%"/></a>
+      <br/><sub><b>提交评测 · 数据集</b><br/>GEN / PPL · 运行参数</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/zh/model.png"><img src="./eval-img/zh/model.png" alt="模型管理" width="100%"/></a>
+      <br/><sub><b>模型管理</b><br/>OpenAI 兼容预设 · 脱敏 Key</sub>
+    </td>
+  </tr>
+</table>
 
 ## 主要特性（MVP）
 
