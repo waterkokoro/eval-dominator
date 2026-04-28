@@ -4,6 +4,7 @@ import "element-ui/lib/theme-chalk/index.css";
 
 import App from "./App.vue";
 import router from "./router";
+import i18n from "./locales";
 import { logoutLocal } from "@/store/user";
 
 Vue.use(ElementUI);
@@ -21,5 +22,6 @@ window.addEventListener("eval-dominator:unauthorized", () => {
 
 new Vue({
   router,
+  i18n,
   render: (h) => h(App)
 }).$mount("#app");

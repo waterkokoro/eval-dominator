@@ -18,7 +18,7 @@
         <el-submenu :index="group.key" :key="group.key">
           <template #title>
             <i :class="group.icon" />
-            <span>{{ group.title }}</span>
+            <span>{{ $t(group.titleKey) }}</span>
           </template>
           <el-menu-item
             v-for="item in group.items"
@@ -26,7 +26,7 @@
             :index="item.path"
           >
             <i :class="item.icon" />
-            <span slot="title">{{ item.title }}</span>
+            <span slot="title">{{ $t(item.titleKey) }}</span>
           </el-menu-item>
         </el-submenu>
       </template>
@@ -37,65 +37,67 @@
 <script>
 import { appStore } from "@/store/app";
 
+const MENU_GROUPS = [
+  {
+    key: "eval",
+    titleKey: "eval.group",
+    icon: "el-icon-data-analysis",
+    items: [
+      {
+        path: "/eval/tasks",
+        titleKey: "eval.list.title",
+        icon: "el-icon-tickets"
+      },
+      {
+        path: "/eval/submit",
+        titleKey: "eval.submit.title",
+        icon: "el-icon-edit-outline"
+      }
+    ]
+  },
+  {
+    key: "model",
+    titleKey: "model.group",
+    icon: "el-icon-cpu",
+    items: [
+      {
+        path: "/models",
+        titleKey: "model.list.title",
+        icon: "el-icon-key"
+      }
+    ]
+  },
+  {
+    key: "dataset",
+    titleKey: "dataset.group",
+    icon: "el-icon-collection",
+    items: [
+      {
+        path: "/datasets",
+        titleKey: "dataset.list.title",
+        icon: "el-icon-folder-opened"
+      }
+    ]
+  },
+  {
+    key: "system",
+    titleKey: "system.group",
+    icon: "el-icon-s-tools",
+    items: [
+      {
+        path: "/about",
+        titleKey: "system.about.title",
+        icon: "el-icon-info"
+      }
+    ]
+  }
+];
+
 export default {
   name: "AppSidebar",
   data() {
     return {
-      menuGroups: [
-        {
-          key: "eval",
-          title: "评测中心",
-          icon: "el-icon-data-analysis",
-          items: [
-            {
-              path: "/eval/tasks",
-              title: "任务列表",
-              icon: "el-icon-tickets"
-            },
-            {
-              path: "/eval/submit",
-              title: "提交评测",
-              icon: "el-icon-edit-outline"
-            }
-          ]
-        },
-        {
-          key: "model",
-          title: "模型管理",
-          icon: "el-icon-cpu",
-          items: [
-            {
-              path: "/models",
-              title: "模型管理",
-              icon: "el-icon-key"
-            }
-          ]
-        },
-        {
-          key: "dataset",
-          title: "数据集",
-          icon: "el-icon-collection",
-          items: [
-            {
-              path: "/datasets",
-              title: "数据集中心",
-              icon: "el-icon-folder-opened"
-            }
-          ]
-        },
-        {
-          key: "system",
-          title: "系统",
-          icon: "el-icon-s-tools",
-          items: [
-            {
-              path: "/about",
-              title: "关于",
-              icon: "el-icon-info"
-            }
-          ]
-        }
-      ]
+      menuGroups: MENU_GROUPS
     };
   },
   computed: {

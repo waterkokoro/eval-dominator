@@ -2,19 +2,19 @@
   <div>
     <div v-if="rows.length" class="metrics-summary">
       <div class="summary-cell">
-        <span class="summary-label">指标条数</span>
+        <span class="summary-label">{{ $t("eval.metrics.summary.count") }}</span>
         <span class="summary-value">{{ rows.length }}</span>
       </div>
       <div class="summary-cell">
-        <span class="summary-label">有效条数</span>
+        <span class="summary-label">{{ $t("eval.metrics.summary.validCount") }}</span>
         <span class="summary-value">{{ summary.validCount }}</span>
       </div>
       <div class="summary-cell">
-        <span class="summary-label">平均得分</span>
+        <span class="summary-label">{{ $t("eval.metrics.summary.average") }}</span>
         <span class="summary-value">{{ formatValue(summary.average) }}</span>
       </div>
       <div class="summary-cell">
-        <span class="summary-label">最高/最低</span>
+        <span class="summary-label">{{ $t("eval.metrics.summary.extreme") }}</span>
         <span class="summary-value">
           {{ formatValue(summary.max) }} / {{ formatValue(summary.min) }}
         </span>
@@ -22,7 +22,7 @@
       <div class="summary-cell summary-actions">
         <el-input
           v-model="keyword"
-          placeholder="按数据集/指标名搜索"
+          :placeholder="$t('eval.metrics.filters.search')"
           size="small"
           clearable
           style="width: 200px"
@@ -30,7 +30,7 @@
         <el-select
           v-model="modeFilter"
           size="small"
-          placeholder="推理方式"
+          :placeholder="$t('eval.metrics.filters.mode')"
           clearable
           style="width: 120px; margin-left: 8px"
         >
@@ -47,7 +47,7 @@
       size="small"
       :default-sort="{ prop: 'numericValue', order: 'descending' }"
     >
-      <el-table-column label="指标" min-width="180">
+      <el-table-column :label="$t('eval.metrics.columns.metric')" min-width="180">
         <template #default="{ row }">
           <span class="metric-name">{{ row.displayName || row.name }}</span>
           <div
@@ -58,12 +58,12 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="数据集" width="220">
+      <el-table-column :label="$t('eval.metrics.columns.dataset')" width="220">
         <template #default="{ row }">
           <span class="cell-mono">{{ row.dataset || "—" }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="推理方式" width="100">
+      <el-table-column :label="$t('eval.metrics.columns.mode')" width="100">
         <template #default="{ row }">
           <el-tag v-if="row.mode" size="mini" :type="modeTagType(row.mode)">
             {{ row.mode.toUpperCase() }}
@@ -71,12 +71,12 @@
           <span v-else>—</span>
         </template>
       </el-table-column>
-      <el-table-column label="模型" min-width="160">
+      <el-table-column :label="$t('eval.metrics.columns.model')" min-width="160">
         <template #default="{ row }">
           <span class="cell-mono">{{ row.model || "—" }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="得分" width="220" prop="numericValue" sortable>
+      <el-table-column :label="$t('eval.metrics.columns.score')" width="220" prop="numericValue" sortable>
         <template #default="{ row }">
           <div v-if="row.isPercent" class="score-bar">
             <el-progress
@@ -90,7 +90,7 @@
           <span v-else class="metric-value">{{ formatValue(row.value) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="说明" min-width="200">
+      <el-table-column :label="$t('eval.metrics.columns.description')" min-width="200">
         <template #default="{ row }">
           <span>{{ row.description || "—" }}</span>
         </template>
@@ -98,8 +98,8 @@
     </el-table>
     <EmptyState
       v-else
-      title="暂无指标数据"
-      :description="rows.length ? '没有符合条件的指标，请调整筛选' : '任务执行成功后会展示评测指标'"
+      :title="$t('eval.metrics.empty.title')"
+      :description="rows.length ? $t('eval.metrics.empty.noMatch') : $t('eval.metrics.empty.wait')"
     />
   </div>
 </template>

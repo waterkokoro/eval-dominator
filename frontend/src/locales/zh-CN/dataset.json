@@ -1,0 +1,76 @@
+{
+  "group": "数据集",
+  "list": {
+    "title": "数据集中心",
+    "description": "集中管理可用于评测的数据集，提交评测时直接选用",
+    "syncBuiltin": "同步内置数据集",
+    "addCustom": "添加自定义",
+    "filters": {
+      "includeDisabled": "包含禁用",
+      "source": "来源",
+      "all": "全部",
+      "builtin": "内置",
+      "custom": "自定义"
+    },
+    "columns": {
+      "dataset": "数据集",
+      "description": "说明",
+      "inferenceMode": "推理方式",
+      "sampleCount": "样本数",
+      "enabled": "启用",
+      "actions": "操作"
+    },
+    "actions": {
+      "use": "用于评测",
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "inferenceMode": {
+      "gen": "GEN（生成式）",
+      "ppl": "PPL（困惑度）"
+    },
+    "empty": "暂无数据集，可点「同步内置数据集」或「添加自定义」",
+    "loadFailed": "加载数据集失败"
+  },
+  "type": {
+    "opencompass_demo": "OpenCompass Demo",
+    "opencompass_standard": "OpenCompass 标准数据集",
+    "custom": "自定义数据集",
+    "unknown": "未知数据集"
+  },
+  "source": {
+    "builtin": "内置",
+    "custom": "自定义"
+  },
+  "dialog": {
+    "createTitle": "添加自定义数据集",
+    "editTitle": "编辑自定义数据集",
+    "fields": {
+      "code": "数据集 Code",
+      "codePlaceholder": "OpenCompass dataset config 名，例如 demo_gsm8k_chat_gen",
+      "displayName": "显示名称",
+      "displayNamePlaceholder": "界面展示名",
+      "description": "说明",
+      "descriptionPlaceholder": "数据集说明（可选）",
+      "sampleCount": "样本数",
+      "type": "类型",
+      "typePlaceholder": "custom / opencompass_standard ..."
+    },
+    "rules": {
+      "codeRequired": "请填写 Code",
+      "displayNameRequired": "请填写显示名称"
+    }
+  },
+  "messages": {
+    "syncSuccess": "同步完成：扫描 {scanned}，新增 {inserted}，更新 {updated}",
+    "syncFailed": "同步失败",
+    "toggleEnabled": "已启用",
+    "toggleDisabled": "已禁用",
+    "toggleFailed": "切换失败",
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败",
+    "deleteConfirm": "确认删除「{name}」？",
+    "deleteSuccess": "已删除",
+    "deleteFailed": "删除失败"
+  }
+}

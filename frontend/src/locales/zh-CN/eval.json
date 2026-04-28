@@ -1,0 +1,247 @@
+{
+  "group": "评测中心",
+  "list": {
+    "title": "任务列表",
+    "description": "查看历史评测任务的状态、模型与数据集",
+    "createTask": "新建评测",
+    "apiNotReadyTitle": "任务列表接口待后端补齐",
+    "apiNotReadyDescription": "后端实现 GET /eval/tasks 后此处将自动渲染历史任务。当前可通过新建评测后跳转到任务详情手动追踪。",
+    "filter": {
+      "task": "任务",
+      "taskPlaceholder": "任务名称或任务 ID（模糊）",
+      "createdAt": "创建时间",
+      "rangeSeparator": "至",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "status": "状态",
+      "statusPlaceholder": "全部",
+      "model": "模型",
+      "modelPlaceholder": "模型名 / Provider",
+      "dataset": "数据集",
+      "datasetPlaceholder": "全部"
+    },
+    "columns": {
+      "taskName": "任务名称",
+      "taskId": "任务 ID",
+      "model": "模型",
+      "dataset": "数据集",
+      "status": "状态",
+      "progress": "进度",
+      "createdAt": "创建时间",
+      "duration": "耗时"
+    },
+    "actions": {
+      "view": "查看",
+      "cancel": "终止"
+    },
+    "empty": "暂无评测任务，点击右上角「新建评测」开始",
+    "emptyApiNotReady": "接口待后端补齐",
+    "cancelConfirmTitle": "终止评测",
+    "cancelConfirmContent": "确定要终止任务「{name}」吗？",
+    "cancelConfirmOk": "确定终止",
+    "cancelConfirmCancel": "取消",
+    "cancelRequested": "已请求终止"
+  },
+  "detail": {
+    "title": "任务详情",
+    "back": "返回列表",
+    "cancel": "终止评测",
+    "rerun": "再次评测",
+    "loading": "加载中",
+    "errorTitle": "执行失败",
+    "tabs": {
+      "overview": "概览",
+      "metrics": "评测指标",
+      "artifacts": "产物",
+      "log": "日志"
+    },
+    "overview": {
+      "taskName": "任务名称",
+      "taskId": "任务 ID",
+      "status": "状态",
+      "modelProvider": "模型 Provider",
+      "modelName": "模型名称",
+      "baseUrl": "Base URL",
+      "dataset": "数据集",
+      "createdAt": "创建时间",
+      "startedAt": "开始时间",
+      "finishedAt": "结束时间",
+      "errorMessage": "错误信息"
+    },
+    "taskIdLabel": "任务 ID",
+    "cancelConfirmTitle": "终止评测",
+    "cancelConfirmContent": "确定要终止该评测任务吗？已经产生的部分产物会保留，但不会继续推理后续数据集。",
+    "cancelConfirmOk": "确定终止",
+    "cancelConfirmCancel": "取消",
+    "cancelRequested": "已请求终止"
+  },
+  "submit": {
+    "title": "提交评测",
+    "description": "配置模型、数据集与运行参数后创建评测任务",
+    "back": "返回任务列表",
+    "section": {
+      "task": "任务信息",
+      "model": "模型配置",
+      "dataset": "数据集",
+      "runtime": "运行参数"
+    },
+    "task": {
+      "name": "任务名称",
+      "namePlaceholder": "可选，用于列表搜索与识别；不填则仅显示短任务 ID"
+    },
+    "model": {
+      "source": "模型来源",
+      "kindApi": "API 模型",
+      "kindApiDesc": "（OpenAI 兼容远程接口）",
+      "kindLocal": "本地模型",
+      "kindLocalDesc": "（本机 HuggingFace 权重）",
+      "kindLocalTip": "需直接加载本地权重与 logits，正在开发中",
+      "sourceHint": "API 模型仅展示与其兼容的评测数据集（一般为 GEN 生成式）；本地模型上线后将支持 PPL 等需 logits 的数据集。",
+      "mode": "选择方式",
+      "modeManual": "手动填写",
+      "modePreset": "使用预设模型",
+      "preset": "预设模型",
+      "presetPlaceholder": "选择已保存的模型预设",
+      "presetDetail": "预设详情",
+      "presetEmptyTitle": "尚未保存任何预设模型",
+      "presetEmptyDescription": "请先到「模型管理」新增预设模型，或切换为手动填写。",
+      "provider": "模型服务商",
+      "providerPlaceholder": "例如 openai-compatible",
+      "modelName": "模型名称",
+      "modelNamePlaceholder": "API 调用的 model 字段，例如 qwen-plus / gpt-4o-mini",
+      "displayName": "备注名称",
+      "displayNamePlaceholder": "可选。便于识别的别名",
+      "version": "自定义版本",
+      "versionPlaceholder": "可选。给同一模型测不同版本时区分",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "https://api.example.com/v1",
+      "apiKey": "API Key",
+      "apiKeyPlaceholder": "仅本次评测使用，可选择保存",
+      "saveAsPreset": "保存为预设",
+      "saveAsPresetHint": "开启后将存入「模型管理」，下次可直接选用",
+      "presetFields": {
+        "modelName": "模型名称",
+        "provider": "服务商",
+        "baseUrl": "Base URL",
+        "version": "版本",
+        "apiKey": "API Key"
+      },
+      "rules": {
+        "providerRequired": "请填写服务商",
+        "modelNameRequired": "请填写模型名称",
+        "baseUrlRequired": "请填写 Base URL",
+        "apiKeyRequired": "请填写 API Key",
+        "presetRequired": "请选择预设模型"
+      }
+    },
+    "dataset": {
+      "select": "选择数据集",
+      "selectPlaceholder": "从与当前模型来源匹配的数据集中选择",
+      "selectPlaceholderEmpty": "暂无匹配的数据集",
+      "loading": "加载中…",
+      "emptyAll": "暂无已启用数据集，请先在「数据集」中同步或启用",
+      "emptyApi": "当前无与 API 模型兼容的数据集（需 GEN 类）。可到数据集页确认推理方式或同步内置集",
+      "noData": "暂无数据",
+      "description": "说明",
+      "noDescription": "无描述",
+      "incompatibleTitle": "该数据集与当前模型来源不兼容",
+      "incompatibleDescription": "所选数据集采用 PPL（困惑度）推理方式，需要直接读取模型 logits，仅适用于本地模型。请改选 GEN 类数据集，或待「本地模型」上线后再试。",
+      "incompatibleSkip": "该数据集与当前 API 模型来源不兼容，已跳过预填",
+      "samples": "{count} 样本",
+      "params": "附加参数",
+      "datasetRequired": "请选择数据集"
+    },
+    "runtime": {
+      "timeout": "超时（秒）",
+      "maxWorkers": "最大并发",
+      "keepRawOutputs": "保留原始输出"
+    },
+    "footer": {
+      "reset": "重置",
+      "create": "创建评测任务",
+      "createSuccess": "任务已创建"
+    }
+  },
+  "status": {
+    "pending": "等待执行",
+    "validating": "校验配置",
+    "building": "构建配置",
+    "running": "执行评测",
+    "parsing": "解析结果",
+    "succeeded": "执行成功",
+    "failed": "执行失败",
+    "timeout": "执行超时",
+    "cancelled": "已终止",
+    "unknown": "未知状态"
+  },
+  "metrics": {
+    "summary": {
+      "count": "指标条数",
+      "validCount": "有效条数",
+      "average": "平均得分",
+      "extreme": "最高/最低"
+    },
+    "filters": {
+      "search": "按数据集/指标名搜索",
+      "mode": "推理方式"
+    },
+    "columns": {
+      "metric": "指标",
+      "dataset": "数据集",
+      "mode": "推理方式",
+      "model": "模型",
+      "score": "得分",
+      "description": "说明"
+    },
+    "empty": {
+      "title": "暂无指标数据",
+      "noMatch": "没有符合条件的指标，请调整筛选",
+      "wait": "任务执行成功后会展示评测指标"
+    }
+  },
+  "artifacts": {
+    "columns": {
+      "type": "类型",
+      "path": "路径",
+      "actions": "操作"
+    },
+    "actions": {
+      "preview": "预览",
+      "download": "下载",
+      "copy": "复制路径",
+      "downloadFull": "下载完整文件"
+    },
+    "types": {
+      "report": "评测报告",
+      "raw_result": "原始结果",
+      "log": "执行日志",
+      "config": "评测配置",
+      "other": "其他"
+    },
+    "empty": {
+      "title": "暂无产物",
+      "description": "任务完成后将在此展示报告、原始结果与日志路径"
+    },
+    "tip": "产物文件均位于服务端 {dir} 输出目录下，「预览」最多展示 512KB 文本，超出请用「下载」。",
+    "preview": {
+      "fallbackTitle": "产物预览",
+      "truncated": "内容超过 512KB，已截断显示。完整内容请下载。",
+      "path": "路径：",
+      "size": "大小：",
+      "empty": "(空)",
+      "binary": "二进制文件不支持预览，请下载查看。",
+      "failed": "预览失败",
+      "downloadFailed": "下载失败"
+    }
+  },
+  "log": {
+    "tail": "最近 {count} 行日志",
+    "autoRefresh": "自动刷新",
+    "refresh": "刷新日志",
+    "unavailable": "日志暂不可用",
+    "empty": "暂无日志",
+    "emptyDescription": "任务开始执行后，OpenCompass 主日志会写入并显示在此",
+    "emptyContent": "暂无日志内容",
+    "loadFailed": "拉取日志失败"
+  }
+}

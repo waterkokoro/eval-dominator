@@ -1,12 +1,12 @@
 <template>
   <div class="about-view">
     <PageHeader
-      title="关于"
-      description="项目信息、服务健康状态与使用提示"
+      :title="$t('system.about.title')"
+      :description="$t('system.about.description')"
     >
       <template #actions>
         <el-button icon="el-icon-refresh" :loading="loading" @click="loadHealth">
-          刷新状态
+          {{ $t("system.about.refresh") }}
         </el-button>
       </template>
     </PageHeader>
@@ -18,8 +18,8 @@
             <i class="el-icon-monitor" />
           </div>
           <div class="health-main">
-            <div class="health-title">Go Web 后端</div>
-            <div class="health-meta">{{ backend.message || "等待检查" }}</div>
+            <div class="health-title">{{ $t("system.about.backendTitle") }}</div>
+            <div class="health-meta">{{ backend.message || $t("system.about.waitingCheck") }}</div>
           </div>
           <el-tag :type="tagType(backend.ok)" size="small">
             {{ statusText(backend.ok) }}
@@ -33,8 +33,8 @@
             <i class="el-icon-cpu" />
           </div>
           <div class="health-main">
-            <div class="health-title">Python Core</div>
-            <div class="health-meta">{{ core.message || "等待检查" }}</div>
+            <div class="health-title">{{ $t("system.about.coreTitle") }}</div>
+            <div class="health-meta">{{ core.message || $t("system.about.waitingCheck") }}</div>
           </div>
           <el-tag :type="tagType(core.ok)" size="small">
             {{ statusText(core.ok) }}
@@ -44,19 +44,23 @@
     </div>
 
     <el-card shadow="never">
-      <div class="info-title">项目信息</div>
+      <div class="info-title">{{ $t("system.about.info.title") }}</div>
       <el-descriptions :column="1" size="small" border>
-        <el-descriptions-item label="项目名称">Eval Dominator</el-descriptions-item>
-        <el-descriptions-item label="定位">轻量级模型评测中心，封装 OpenCompass 原子能力</el-descriptions-item>
-        <el-descriptions-item label="技术栈">
-          Vue2 + ElementUI · Go + Gin · Python Core (gRPC) · SQLite
+        <el-descriptions-item :label="$t('system.about.info.name')">Eval Dominator</el-descriptions-item>
+        <el-descriptions-item :label="$t('system.about.info.tagline')">
+          {{ $t("system.about.info.taglineValue") }}
         </el-descriptions-item>
-        <el-descriptions-item label="健康检查时间">{{ checkedAt }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('system.about.info.stack')">
+          {{ $t("system.about.info.stackValue") }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('system.about.info.checkedAt')">
+          {{ checkedAt }}
+        </el-descriptions-item>
       </el-descriptions>
     </el-card>
 
     <el-card shadow="never" class="todo-card">
-      <div class="info-title">后端待补接口</div>
+      <div class="info-title">{{ $t("system.about.pendingApis") }}</div>
       <ul class="todo-list">
         <li v-for="api in pendingApis" :key="api"><code>{{ api }}</code></li>
       </ul>
@@ -98,7 +102,7 @@ export default {
       return appStore.health.core || { ok: null, message: "" };
     },
     checkedAt() {
-      return appStore.health.checkedAt || "未检查";
+      return appStore.health.checkedAt || this.$t("system.about.info.neverChecked");
     }
   },
   created() {
@@ -117,13 +121,13 @@ export default {
         const status = error?.response?.status;
         if (!status || status === 404) {
           setHealth({
-            backend: { ok: null, message: "/system/health 接口待后端补齐" },
-            core: { ok: null, message: "/system/health 接口待后端补齐" }
+            backend: { ok: null, message: this.$t("system.about.healthApiUnready") },
+            core: { ok: null, message: this.$t("system.about.healthApiUnready") }
           });
         } else {
           setHealth({
-            backend: { ok: false, message: "unreachable" },
-            core: { ok: false, message: "unreachable" }
+            backend: { ok: false, message: this.$t("system.health.unreachable") },
+            core: { ok: false, message: this.$t("system.health.unreachable") }
           });
         }
       } finally {
@@ -139,8 +143,8 @@ export default {
       return ok ? "success" : "danger";
     },
     statusText(ok) {
-      if (ok === null || ok === undefined) return "未知";
-      return ok ? "正常" : "异常";
+      if (ok === null || ok === undefined) return this.$t("system.health.unknown_short");
+      return ok ? this.$t("system.health.ok_short") : this.$t("system.health.down_short");
     }
   }
 };

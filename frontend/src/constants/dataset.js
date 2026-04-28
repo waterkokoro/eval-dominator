@@ -1,14 +1,22 @@
-export const datasetTypeOptions = [
-  { value: "opencompass_demo", label: "OpenCompass Demo" },
-  { value: "opencompass_standard", label: "OpenCompass 标准数据集" },
-  { value: "custom", label: "自定义数据集" }
+import i18n from "@/locales";
+
+export const DATASET_TYPE_KEYS = [
+  "opencompass_demo",
+  "opencompass_standard",
+  "custom"
 ];
 
-export const datasetTypeText = datasetTypeOptions.reduce((acc, item) => {
-  acc[item.value] = item.label;
-  return acc;
-}, {});
-
 export function getDatasetTypeText(type) {
-  return datasetTypeText[type] || type || "未知数据集";
+  if (!type) return i18n.t("dataset.type.unknown");
+  if (DATASET_TYPE_KEYS.includes(type)) {
+    return i18n.t(`dataset.type.${type}`);
+  }
+  return type;
+}
+
+export function getDatasetTypeOptions() {
+  return DATASET_TYPE_KEYS.map((value) => ({
+    value,
+    label: i18n.t(`dataset.type.${value}`)
+  }));
 }

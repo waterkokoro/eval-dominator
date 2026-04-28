@@ -1,36 +1,36 @@
 <template>
   <div class="dataset-list">
     <PageHeader
-      title="数据集中心"
-      description="集中管理可用于评测的数据集，提交评测时直接选用"
+      :title="$t('dataset.list.title')"
+      :description="$t('dataset.list.description')"
     >
       <template #actions>
         <el-button icon="el-icon-refresh" :loading="loading" @click="loadList">
-          刷新
+          {{ $t("common.actions.refresh") }}
         </el-button>
         <el-button
           icon="el-icon-magic-stick"
           :loading="syncing"
           @click="handleSync"
         >
-          同步内置数据集
+          {{ $t("dataset.list.syncBuiltin") }}
         </el-button>
         <el-button type="primary" icon="el-icon-plus" @click="openCreate">
-          添加自定义
+          {{ $t("dataset.list.addCustom") }}
         </el-button>
       </template>
     </PageHeader>
 
     <el-card shadow="never" class="filter-card">
       <el-form :inline="true" size="small" @submit.native.prevent>
-        <el-form-item label="包含禁用">
+        <el-form-item :label="$t('dataset.list.filters.includeDisabled')">
           <el-switch v-model="includeDisabled" @change="loadList" />
         </el-form-item>
-        <el-form-item label="来源">
+        <el-form-item :label="$t('dataset.list.filters.source')">
           <el-radio-group v-model="sourceFilter" @change="loadList">
-            <el-radio-button label="all">全部</el-radio-button>
-            <el-radio-button label="builtin">内置</el-radio-button>
-            <el-radio-button label="custom">自定义</el-radio-button>
+            <el-radio-button label="all">{{ $t("dataset.list.filters.all") }}</el-radio-button>
+            <el-radio-button label="builtin">{{ $t("dataset.list.filters.builtin") }}</el-radio-button>
+            <el-radio-button label="custom">{{ $t("dataset.list.filters.custom") }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -44,42 +44,42 @@
         size="small"
         stripe
       >
-        <el-table-column label="数据集" min-width="240">
+        <el-table-column :label="$t('dataset.list.columns.dataset')" min-width="240">
           <template #default="{ row }">
             <div class="cell-main">
               <div class="cell-title">
                 <span>{{ row.displayName }}</span>
                 <el-tag size="mini" :type="row.source === 'builtin' ? 'info' : 'warning'">
-                  {{ row.source === "builtin" ? "内置" : "自定义" }}
+                  {{ $t(`dataset.source.${row.source}`) }}
                 </el-tag>
               </div>
               <div class="cell-code">{{ row.code }}</div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="说明" min-width="280">
+        <el-table-column :label="$t('dataset.list.columns.description')" min-width="280">
           <template #default="{ row }">
             <span class="description">{{ row.description || "-" }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="推理方式" width="140" align="center">
+        <el-table-column :label="$t('dataset.list.columns.inferenceMode')" width="160" align="center">
           <template #default="{ row }">
             <el-tag
               v-if="row.inferenceMode"
               size="mini"
               :type="row.inferenceMode === 'gen' ? 'success' : 'warning'"
             >
-              {{ row.inferenceMode === "gen" ? "GEN（生成式）" : "PPL（困惑度）" }}
+              {{ row.inferenceMode === "gen" ? $t("dataset.list.inferenceMode.gen") : $t("dataset.list.inferenceMode.ppl") }}
             </el-tag>
             <span v-else class="muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="样本数" width="90" align="right">
+        <el-table-column :label="$t('dataset.list.columns.sampleCount')" width="90" align="right">
           <template #default="{ row }">
             {{ row.sampleCount || "-" }}
           </template>
         </el-table-column>
-        <el-table-column label="启用" width="80" align="center">
+        <el-table-column :label="$t('dataset.list.columns.enabled')" width="80" align="center">
           <template #default="{ row }">
             <el-switch
               :value="row.enabled"
@@ -88,10 +88,10 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" align="right">
+        <el-table-column :label="$t('dataset.list.columns.actions')" width="180" align="right">
           <template #default="{ row }">
             <el-button size="mini" type="text" @click="useDataset(row)">
-              用于评测
+              {{ $t("dataset.list.actions.use") }}
             </el-button>
             <el-button
               v-if="row.source === 'custom'"
@@ -99,7 +99,7 @@
               type="text"
               @click="openEdit(row)"
             >
-              编辑
+              {{ $t("dataset.list.actions.edit") }}
             </el-button>
             <el-button
               v-if="row.source === 'custom'"
@@ -108,7 +108,7 @@
               class="danger-btn"
               @click="handleDelete(row)"
             >
-              删除
+              {{ $t("dataset.list.actions.delete") }}
             </el-button>
           </template>
         </el-table-column>
@@ -116,7 +116,7 @@
     </el-card>
 
     <el-dialog
-      :title="dialog.id ? '编辑自定义数据集' : '添加自定义数据集'"
+      :title="dialog.id ? $t('dataset.dialog.editTitle') : $t('dataset.dialog.createTitle')"
       :visible.sync="dialog.visible"
       width="540px"
       append-to-body
@@ -125,43 +125,43 @@
       <el-form
         ref="dialogForm"
         :model="dialog.form"
-        :rules="dialog.rules"
+        :rules="dialogRules"
         label-width="100px"
         size="small"
       >
-        <el-form-item label="数据集 Code" prop="code">
+        <el-form-item :label="$t('dataset.dialog.fields.code')" prop="code">
           <el-input
             v-model="dialog.form.code"
             :disabled="!!dialog.id"
-            placeholder="OpenCompass dataset config 名，例如 demo_gsm8k_chat_gen"
+            :placeholder="$t('dataset.dialog.fields.codePlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="显示名称" prop="displayName">
-          <el-input v-model="dialog.form.displayName" placeholder="界面展示名" />
+        <el-form-item :label="$t('dataset.dialog.fields.displayName')" prop="displayName">
+          <el-input v-model="dialog.form.displayName" :placeholder="$t('dataset.dialog.fields.displayNamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="说明">
+        <el-form-item :label="$t('dataset.dialog.fields.description')">
           <el-input
             v-model="dialog.form.description"
             type="textarea"
             :rows="2"
-            placeholder="数据集说明（可选）"
+            :placeholder="$t('dataset.dialog.fields.descriptionPlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="样本数">
+        <el-form-item :label="$t('dataset.dialog.fields.sampleCount')">
           <el-input-number
             v-model="dialog.form.sampleCount"
             :min="0"
             controls-position="right"
           />
         </el-form-item>
-        <el-form-item label="类型">
-          <el-input v-model="dialog.form.type" placeholder="custom / opencompass_standard ..." />
+        <el-form-item :label="$t('dataset.dialog.fields.type')">
+          <el-input v-model="dialog.form.type" :placeholder="$t('dataset.dialog.fields.typePlaceholder')" />
         </el-form-item>
       </el-form>
       <span slot="footer">
-        <el-button @click="dialog.visible = false">取消</el-button>
+        <el-button @click="dialog.visible = false">{{ $t("common.actions.cancel") }}</el-button>
         <el-button type="primary" :loading="dialog.saving" @click="handleSave">
-          保存
+          {{ $t("common.actions.save") }}
         </el-button>
       </span>
     </el-dialog>
@@ -179,6 +179,7 @@ import {
   deleteDataset,
   syncDatasets
 } from "@/api/dataset";
+import { resolveApiErrorMessage } from "@/api/http";
 
 const buildDialog = () => ({
   visible: false,
@@ -190,10 +191,6 @@ const buildDialog = () => ({
     description: "",
     sampleCount: 0,
     type: "custom"
-  },
-  rules: {
-    code: [{ required: true, message: "请填写 Code", trigger: "blur" }],
-    displayName: [{ required: true, message: "请填写显示名称", trigger: "blur" }]
   }
 });
 
@@ -217,7 +214,14 @@ export default {
       return this.rows.filter((row) => row.source === this.sourceFilter);
     },
     emptyText() {
-      return "暂无数据集，可点「同步内置数据集」或「添加自定义」";
+      return this.$t("dataset.list.empty");
+    },
+    dialogRules() {
+      const t = (k) => this.$t(`dataset.dialog.rules.${k}`);
+      return {
+        code: [{ required: true, message: t("codeRequired"), trigger: "blur" }],
+        displayName: [{ required: true, message: t("displayNameRequired"), trigger: "blur" }]
+      };
     }
   },
   created() {
@@ -231,7 +235,7 @@ export default {
         this.rows = Array.isArray(data) ? data : data?.items || [];
       } catch (error) {
         this.rows = [];
-        this.$message.error(error?.response?.data?.message || "加载数据集失败");
+        this.$message.error(resolveApiErrorMessage(error) || this.$t("dataset.list.loadFailed"));
       } finally {
         this.loading = false;
       }
@@ -241,11 +245,15 @@ export default {
       try {
         const result = await syncDatasets();
         this.$message.success(
-          `同步完成：扫描 ${result.scanned}，新增 ${result.inserted}，更新 ${result.updated}`
+          this.$t("dataset.messages.syncSuccess", {
+            scanned: result.scanned,
+            inserted: result.inserted,
+            updated: result.updated
+          })
         );
         this.loadList();
       } catch (error) {
-        this.$message.error(error?.response?.data?.message || "同步失败");
+        this.$message.error(resolveApiErrorMessage(error) || this.$t("dataset.messages.syncFailed"));
       } finally {
         this.syncing = false;
       }
@@ -254,9 +262,9 @@ export default {
       try {
         await setDatasetEnabled(row.id, enabled);
         row.enabled = enabled;
-        this.$message.success(enabled ? "已启用" : "已禁用");
+        this.$message.success(enabled ? this.$t("dataset.messages.toggleEnabled") : this.$t("dataset.messages.toggleDisabled"));
       } catch (error) {
-        this.$message.error(error?.response?.data?.message || "切换失败");
+        this.$message.error(resolveApiErrorMessage(error) || this.$t("dataset.messages.toggleFailed"));
       }
     },
     openCreate() {
@@ -298,29 +306,31 @@ export default {
             sampleCount: this.dialog.form.sampleCount
           });
         }
-        this.$message.success("保存成功");
+        this.$message.success(this.$t("dataset.messages.saveSuccess"));
         this.dialog.visible = false;
         this.loadList();
       } catch (error) {
-        this.$message.error(error?.response?.data?.message || "保存失败");
+        this.$message.error(resolveApiErrorMessage(error) || this.$t("dataset.messages.saveFailed"));
       } finally {
         this.dialog.saving = false;
       }
     },
     async handleDelete(row) {
       try {
-        await this.$confirm(`确认删除「${row.displayName}」？`, "提示", {
-          type: "warning"
-        });
+        await this.$confirm(
+          this.$t("dataset.messages.deleteConfirm", { name: row.displayName }),
+          this.$t("common.messages.tip"),
+          { type: "warning" }
+        );
       } catch (e) {
         return;
       }
       try {
         await deleteDataset(row.id);
-        this.$message.success("已删除");
+        this.$message.success(this.$t("dataset.messages.deleteSuccess"));
         this.loadList();
       } catch (error) {
-        this.$message.error(error?.response?.data?.message || "删除失败");
+        this.$message.error(resolveApiErrorMessage(error) || this.$t("dataset.messages.deleteFailed"));
       }
     },
     useDataset(row) {

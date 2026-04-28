@@ -1,0 +1,32 @@
+{
+  "group": "系统",
+  "about": {
+    "title": "关于",
+    "description": "项目信息、服务健康状态与使用提示",
+    "refresh": "刷新状态",
+    "backendTitle": "Go Web 后端",
+    "coreTitle": "Python Core",
+    "waitingCheck": "等待检查",
+    "info": {
+      "title": "项目信息",
+      "name": "项目名称",
+      "tagline": "定位",
+      "taglineValue": "轻量级模型评测中心，封装 OpenCompass 原子能力",
+      "stack": "技术栈",
+      "stackValue": "Vue2 + ElementUI · Go + Gin · Python Core (gRPC) · SQLite",
+      "checkedAt": "健康检查时间",
+      "neverChecked": "未检查"
+    },
+    "pendingApis": "后端待补接口",
+    "healthApiUnready": "/system/health 接口待后端补齐"
+  },
+  "health": {
+    "ok": "服务正常",
+    "down": "服务异常",
+    "unknown": "状态未知",
+    "ok_short": "正常",
+    "down_short": "异常",
+    "unknown_short": "未知",
+    "unreachable": "unreachable"
+  }
+}

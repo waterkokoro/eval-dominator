@@ -1,0 +1,57 @@
+{
+  "actions": {
+    "refresh": "Refresh",
+    "submit": "Submit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "reset": "Reset",
+    "close": "Close",
+    "search": "Search",
+    "addItem": "Add item",
+    "copyPath": "Copy path",
+    "download": "Download",
+    "preview": "Preview",
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "status": {
+    "all": "All",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "succeeded": "Healthy",
+    "failed": "Unhealthy",
+    "unknown": "Unknown",
+    "loading": "Loading…",
+    "waiting": "Waiting"
+  },
+  "messages": {
+    "saveSuccess": "Saved",
+    "deleteSuccess": "Deleted",
+    "copySuccess": "Path copied",
+    "requestFailed": "Request failed",
+    "loadFailed": "Failed to load",
+    "saveFailed": "Failed to save",
+    "deleteFailed": "Failed to delete",
+    "tip": "Notice",
+    "empty": "No data"
+  },
+  "fields": {
+    "name": "Name",
+    "createdAt": "Created at",
+    "actions": "Actions",
+    "status": "Status"
+  },
+  "placeholders": {
+    "selectAll": "All",
+    "key": "key",
+    "value": "value"
+  },
+  "language": {
+    "label": "Language",
+    "switch": "Switch language"
+  }
+}

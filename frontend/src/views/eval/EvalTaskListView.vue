@@ -1,19 +1,19 @@
 <template>
   <div class="task-list">
     <PageHeader
-      title="任务列表"
-      description="查看历史评测任务的状态、模型与数据集"
+      :title="$t('eval.list.title')"
+      :description="$t('eval.list.description')"
     >
       <template #actions>
         <el-button icon="el-icon-refresh" :loading="loading" @click="loadList">
-          刷新
+          {{ $t("common.actions.refresh") }}
         </el-button>
         <el-button
           type="primary"
           icon="el-icon-plus"
           @click="$router.push({ name: 'eval-submit' })"
         >
-          新建评测
+          {{ $t("eval.list.createTask") }}
         </el-button>
       </template>
     </PageHeader>
@@ -22,40 +22,40 @@
       v-if="apiNotReady"
       type="info"
       :closable="false"
-      title="任务列表接口待后端补齐"
-      description="后端实现 GET /eval/tasks 后此处将自动渲染历史任务。当前可通过新建评测后跳转到任务详情手动追踪。"
+      :title="$t('eval.list.apiNotReadyTitle')"
+      :description="$t('eval.list.apiNotReadyDescription')"
       class="page-alert"
       show-icon
     />
 
     <el-card shadow="never" class="filter-card">
       <el-form :inline="true" :model="filter" size="small" @submit.native.prevent>
-        <el-form-item label="任务">
+        <el-form-item :label="$t('eval.list.filter.task')">
           <el-input
             v-model="filter.search"
-            placeholder="任务名称或任务 ID（模糊）"
+            :placeholder="$t('eval.list.filter.taskPlaceholder')"
             clearable
             style="width: 240px"
           />
         </el-form-item>
-        <el-form-item label="创建时间">
+        <el-form-item :label="$t('eval.list.filter.createdAt')">
           <el-date-picker
             v-model="filter.dateRange"
             type="daterange"
             align="right"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
+            :range-separator="$t('eval.list.filter.rangeSeparator')"
+            :start-placeholder="$t('eval.list.filter.startDate')"
+            :end-placeholder="$t('eval.list.filter.endDate')"
             value-format="yyyy-MM-dd"
             unlink-panels
             clearable
             style="width: 280px"
           />
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="$t('eval.list.filter.status')">
           <el-select
             v-model="filter.status"
-            placeholder="全部"
+            :placeholder="$t('eval.list.filter.statusPlaceholder')"
             multiple
             collapse-tags
             clearable
@@ -69,18 +69,18 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="模型">
+        <el-form-item :label="$t('eval.list.filter.model')">
           <el-input
             v-model="filter.keyword"
-            placeholder="模型名 / Provider"
+            :placeholder="$t('eval.list.filter.modelPlaceholder')"
             clearable
             style="width: 200px"
           />
         </el-form-item>
-        <el-form-item label="数据集">
+        <el-form-item :label="$t('eval.list.filter.dataset')">
           <el-select
             v-model="filter.datasetType"
-            placeholder="全部"
+            :placeholder="$t('eval.list.filter.datasetPlaceholder')"
             clearable
             style="width: 200px"
           >
@@ -94,9 +94,9 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" @click="loadList">
-            查询
+            {{ $t("common.actions.search") }}
           </el-button>
-          <el-button @click="resetFilter">重置</el-button>
+          <el-button @click="resetFilter">{{ $t("common.actions.reset") }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -110,17 +110,17 @@
         size="small"
         @row-click="handleRowClick"
       >
-        <el-table-column label="任务名称" min-width="140" show-overflow-tooltip>
+        <el-table-column :label="$t('eval.list.columns.taskName')" min-width="140" show-overflow-tooltip>
           <template #default="{ row }">
             {{ displayTaskName(row) }}
           </template>
         </el-table-column>
-        <el-table-column label="任务 ID" min-width="140">
+        <el-table-column :label="$t('eval.list.columns.taskId')" min-width="140">
           <template #default="{ row }">
             <span class="task-id">{{ shortId(row.evalTaskId) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="模型" min-width="200">
+        <el-table-column :label="$t('eval.list.columns.model')" min-width="200">
           <template #default="{ row }">
             <div class="model-cell">
               <span>{{ row.modelName || "-" }}</span>
@@ -128,7 +128,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="数据集" min-width="180">
+        <el-table-column :label="$t('eval.list.columns.dataset')" min-width="180">
           <template #default="{ row }">
             <div class="dataset-cell">
               <span>{{ row.datasetName || "-" }}</span>
@@ -136,34 +136,34 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="110">
+        <el-table-column :label="$t('eval.list.columns.status')" width="110">
           <template #default="{ row }">
             <StatusTag :status="row.status" />
           </template>
         </el-table-column>
-        <el-table-column label="进度" width="160">
+        <el-table-column :label="$t('eval.list.columns.progress')" width="160">
           <template #default="{ row }">
             <EvalProgress :status="row.status" :stroke-width="6" />
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="170">
+        <el-table-column :label="$t('eval.list.columns.createdAt')" width="170">
           <template #default="{ row }">
             {{ formatTime(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="耗时" width="90">
+        <el-table-column :label="$t('eval.list.columns.duration')" width="90">
           <template #default="{ row }">
             {{ duration(row) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" align="right">
+        <el-table-column :label="$t('common.fields.actions')" width="160" align="right">
           <template #default="{ row }">
             <el-button
               type="text"
               size="mini"
               @click.stop="goDetail(row.evalTaskId)"
             >
-              查看
+              {{ $t("eval.list.actions.view") }}
             </el-button>
             <el-button
               v-if="canCancelEvalStatus(row.status)"
@@ -173,7 +173,7 @@
               :loading="cancellingId === row.evalTaskId"
               @click.stop="handleCancel(row)"
             >
-              终止
+              {{ $t("eval.list.actions.cancel") }}
             </el-button>
           </template>
         </el-table-column>
@@ -202,11 +202,11 @@ import EvalProgress from "@/components/EvalProgress.vue";
 
 import { listEvalTasks, cancelEvalTask } from "@/api/eval-task";
 import {
-  evalStatusOptions,
+  getEvalStatusOptions,
   isEvalStatusFinal,
   canCancelEvalStatus
 } from "@/constants/eval-status";
-import { datasetTypeOptions, getDatasetTypeText } from "@/constants/dataset";
+import { getDatasetTypeOptions, getDatasetTypeText } from "@/constants/dataset";
 import { formatDateTime, durationText } from "@/utils/time";
 
 const buildFilter = () => ({
@@ -232,15 +232,22 @@ export default {
         page: 1,
         pageSize: 10
       },
-      filter: buildFilter(),
-      statusOptions: evalStatusOptions,
-      datasetTypeOptions
+      filter: buildFilter()
     };
   },
   computed: {
+    statusOptions() {
+      // 依赖 $i18n.locale 让选项随语言切换刷新
+      this.$i18n.locale; // eslint-disable-line no-unused-expressions
+      return getEvalStatusOptions();
+    },
+    datasetTypeOptions() {
+      this.$i18n.locale; // eslint-disable-line no-unused-expressions
+      return getDatasetTypeOptions();
+    },
     emptyText() {
-      if (this.apiNotReady) return "接口待后端补齐";
-      return "暂无评测任务，点击右上角「新建评测」开始";
+      if (this.apiNotReady) return this.$t("eval.list.emptyApiNotReady");
+      return this.$t("eval.list.empty");
     }
   },
   created() {
@@ -324,9 +331,15 @@ export default {
       if (!row?.evalTaskId) return;
       try {
         await this.$confirm(
-          `确定要终止任务「${row.taskName || row.evalTaskId}」吗？`,
-          "终止评测",
-          { type: "warning", confirmButtonText: "确定终止", cancelButtonText: "取消" }
+          this.$t("eval.list.cancelConfirmContent", {
+            name: row.taskName || row.evalTaskId
+          }),
+          this.$t("eval.list.cancelConfirmTitle"),
+          {
+            type: "warning",
+            confirmButtonText: this.$t("eval.list.cancelConfirmOk"),
+            cancelButtonText: this.$t("eval.list.cancelConfirmCancel")
+          }
         );
       } catch (e) {
         return;
@@ -334,7 +347,7 @@ export default {
       this.cancellingId = row.evalTaskId;
       try {
         await cancelEvalTask(row.evalTaskId);
-        this.$message.success("已请求终止");
+        this.$message.success(this.$t("eval.list.cancelRequested"));
         await this.loadList(true);
       } finally {
         this.cancellingId = "";

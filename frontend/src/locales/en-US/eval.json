@@ -1,0 +1,247 @@
+{
+  "group": "Evaluation",
+  "list": {
+    "title": "Tasks",
+    "description": "Browse historical evaluation tasks with model and dataset info.",
+    "createTask": "New evaluation",
+    "apiNotReadyTitle": "Task list endpoint pending on backend",
+    "apiNotReadyDescription": "Once the backend implements GET /eval/tasks, history will render here. For now, submit a new evaluation and follow the detail page.",
+    "filter": {
+      "task": "Task",
+      "taskPlaceholder": "Task name or ID (fuzzy)",
+      "createdAt": "Created at",
+      "rangeSeparator": "to",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "status": "Status",
+      "statusPlaceholder": "All",
+      "model": "Model",
+      "modelPlaceholder": "Model name / Provider",
+      "dataset": "Dataset",
+      "datasetPlaceholder": "All"
+    },
+    "columns": {
+      "taskName": "Task name",
+      "taskId": "Task ID",
+      "model": "Model",
+      "dataset": "Dataset",
+      "status": "Status",
+      "progress": "Progress",
+      "createdAt": "Created at",
+      "duration": "Duration"
+    },
+    "actions": {
+      "view": "View",
+      "cancel": "Stop"
+    },
+    "empty": "No evaluation tasks yet. Click \"New evaluation\" to start.",
+    "emptyApiNotReady": "Endpoint pending on backend",
+    "cancelConfirmTitle": "Stop evaluation",
+    "cancelConfirmContent": "Stop task \"{name}\"?",
+    "cancelConfirmOk": "Stop",
+    "cancelConfirmCancel": "Cancel",
+    "cancelRequested": "Stop request sent"
+  },
+  "detail": {
+    "title": "Task detail",
+    "back": "Back to list",
+    "cancel": "Stop evaluation",
+    "rerun": "Run again",
+    "loading": "Loading",
+    "errorTitle": "Execution failed",
+    "tabs": {
+      "overview": "Overview",
+      "metrics": "Metrics",
+      "artifacts": "Artifacts",
+      "log": "Log"
+    },
+    "overview": {
+      "taskName": "Task name",
+      "taskId": "Task ID",
+      "status": "Status",
+      "modelProvider": "Model provider",
+      "modelName": "Model name",
+      "baseUrl": "Base URL",
+      "dataset": "Dataset",
+      "createdAt": "Created at",
+      "startedAt": "Started at",
+      "finishedAt": "Finished at",
+      "errorMessage": "Error message"
+    },
+    "taskIdLabel": "Task ID",
+    "cancelConfirmTitle": "Stop evaluation",
+    "cancelConfirmContent": "Stop this evaluation? Partial artifacts will be kept, but no further inference will run.",
+    "cancelConfirmOk": "Stop",
+    "cancelConfirmCancel": "Cancel",
+    "cancelRequested": "Stop request sent"
+  },
+  "submit": {
+    "title": "Submit evaluation",
+    "description": "Configure model, dataset and runtime parameters, then create the evaluation task.",
+    "back": "Back to task list",
+    "section": {
+      "task": "Task info",
+      "model": "Model",
+      "dataset": "Dataset",
+      "runtime": "Runtime"
+    },
+    "task": {
+      "name": "Task name",
+      "namePlaceholder": "Optional. Used to search and identify; if empty, only the short task ID is shown."
+    },
+    "model": {
+      "source": "Model source",
+      "kindApi": "API model",
+      "kindApiDesc": " (OpenAI-compatible remote endpoint)",
+      "kindLocal": "Local model",
+      "kindLocalDesc": " (local HuggingFace weights)",
+      "kindLocalTip": "Requires loading local weights and logits. Coming soon.",
+      "sourceHint": "API models only show compatible datasets (typically GEN). PPL-style datasets that need logits will be available once local model support ships.",
+      "mode": "Selection",
+      "modeManual": "Fill manually",
+      "modePreset": "Use preset",
+      "preset": "Preset model",
+      "presetPlaceholder": "Pick a saved model preset",
+      "presetDetail": "Preset detail",
+      "presetEmptyTitle": "No model presets saved yet",
+      "presetEmptyDescription": "Add a preset under \"Models\", or switch to manual entry.",
+      "provider": "Provider",
+      "providerPlaceholder": "e.g. openai-compatible",
+      "modelName": "Model name",
+      "modelNamePlaceholder": "The \"model\" value sent to the API, e.g. qwen-plus / gpt-4o-mini",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Optional alias for easier recognition",
+      "version": "Custom version",
+      "versionPlaceholder": "Optional. Distinguish runs of the same model.",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "https://api.example.com/v1",
+      "apiKey": "API Key",
+      "apiKeyPlaceholder": "Used only for this run, can be saved.",
+      "saveAsPreset": "Save as preset",
+      "saveAsPresetHint": "When on, the entry is saved under \"Models\" for next time.",
+      "presetFields": {
+        "modelName": "Model name",
+        "provider": "Provider",
+        "baseUrl": "Base URL",
+        "version": "Version",
+        "apiKey": "API Key"
+      },
+      "rules": {
+        "providerRequired": "Please enter the provider",
+        "modelNameRequired": "Please enter the model name",
+        "baseUrlRequired": "Please enter the Base URL",
+        "apiKeyRequired": "Please enter the API Key",
+        "presetRequired": "Please select a preset model"
+      }
+    },
+    "dataset": {
+      "select": "Dataset",
+      "selectPlaceholder": "Pick a dataset compatible with the chosen model source",
+      "selectPlaceholderEmpty": "No compatible datasets",
+      "loading": "Loading…",
+      "emptyAll": "No enabled datasets. Sync or enable some under \"Datasets\" first.",
+      "emptyApi": "No API-compatible (GEN) datasets available. Check inference mode under Datasets, or sync built-ins.",
+      "noData": "No data",
+      "description": "Description",
+      "noDescription": "No description",
+      "incompatibleTitle": "Dataset incompatible with the selected model source",
+      "incompatibleDescription": "This dataset uses PPL (perplexity) inference, which requires direct logits access and only works with local models. Please pick a GEN dataset, or wait until \"Local model\" ships.",
+      "incompatibleSkip": "Dataset incompatible with the selected API model source; prefill skipped.",
+      "samples": "{count} samples",
+      "params": "Extra params",
+      "datasetRequired": "Please select a dataset"
+    },
+    "runtime": {
+      "timeout": "Timeout (s)",
+      "maxWorkers": "Max workers",
+      "keepRawOutputs": "Keep raw outputs"
+    },
+    "footer": {
+      "reset": "Reset",
+      "create": "Create task",
+      "createSuccess": "Task created"
+    }
+  },
+  "status": {
+    "pending": "Pending",
+    "validating": "Validating",
+    "building": "Building",
+    "running": "Running",
+    "parsing": "Parsing",
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "timeout": "Timed out",
+    "cancelled": "Cancelled",
+    "unknown": "Unknown"
+  },
+  "metrics": {
+    "summary": {
+      "count": "Metrics",
+      "validCount": "Valid",
+      "average": "Average",
+      "extreme": "Max / Min"
+    },
+    "filters": {
+      "search": "Search by dataset / metric name",
+      "mode": "Mode"
+    },
+    "columns": {
+      "metric": "Metric",
+      "dataset": "Dataset",
+      "mode": "Mode",
+      "model": "Model",
+      "score": "Score",
+      "description": "Description"
+    },
+    "empty": {
+      "title": "No metrics yet",
+      "noMatch": "No metrics match the filter, please adjust.",
+      "wait": "Metrics will appear after the task succeeds."
+    }
+  },
+  "artifacts": {
+    "columns": {
+      "type": "Type",
+      "path": "Path",
+      "actions": "Actions"
+    },
+    "actions": {
+      "preview": "Preview",
+      "download": "Download",
+      "copy": "Copy path",
+      "downloadFull": "Download full file"
+    },
+    "types": {
+      "report": "Report",
+      "raw_result": "Raw result",
+      "log": "Run log",
+      "config": "Config",
+      "other": "Other"
+    },
+    "empty": {
+      "title": "No artifacts yet",
+      "description": "Once the task finishes, the report, raw results and log paths will appear here."
+    },
+    "tip": "All artifacts live under {dir} on the server. \"Preview\" shows up to 512KB of text; use \"Download\" for larger files.",
+    "preview": {
+      "fallbackTitle": "Artifact preview",
+      "truncated": "Content exceeds 512KB and is truncated. Download for the full file.",
+      "path": "Path: ",
+      "size": "Size: ",
+      "empty": "(empty)",
+      "binary": "Binary file is not previewable, please download.",
+      "failed": "Preview failed",
+      "downloadFailed": "Download failed"
+    }
+  },
+  "log": {
+    "tail": "Latest {count} lines",
+    "autoRefresh": "Auto refresh",
+    "refresh": "Refresh log",
+    "unavailable": "Log unavailable",
+    "empty": "No log yet",
+    "emptyDescription": "Once the task starts, OpenCompass main log will be written and shown here.",
+    "emptyContent": "No log content",
+    "loadFailed": "Failed to fetch log"
+  }
+}

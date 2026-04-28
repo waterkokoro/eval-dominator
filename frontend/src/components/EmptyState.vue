@@ -1,7 +1,7 @@
 <template>
   <div class="empty-state" :class="`empty-state--${type}`">
     <i class="empty-state-icon" :class="iconClass" />
-    <div class="empty-state-title">{{ title }}</div>
+    <div class="empty-state-title">{{ resolvedTitle }}</div>
     <div v-if="description" class="empty-state-desc">{{ description }}</div>
     <div v-if="$slots.default" class="empty-state-actions">
       <slot />
@@ -27,7 +27,7 @@ export default {
     },
     title: {
       type: String,
-      default: "暂无数据"
+      default: ""
     },
     description: {
       type: String,
@@ -37,6 +37,9 @@ export default {
   computed: {
     iconClass() {
       return iconMap[this.type] || iconMap.empty;
+    },
+    resolvedTitle() {
+      return this.title || this.$t("common.messages.empty");
     }
   }
 };

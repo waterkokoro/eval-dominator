@@ -1,0 +1,23 @@
+{
+  "INVALID_ARGUMENT": "请求参数错误",
+  "UNAUTHORIZED": "未登录或登录已失效，请重新登录",
+  "LOGIN_FAILED": "登录失败",
+  "CHANGE_PASSWORD_FAILED": "修改密码失败",
+  "CREATE_EVAL_TASK_FAILED": "创建评测任务失败",
+  "EVAL_TASK_NOT_FOUND": "评测任务不存在",
+  "EVAL_RESULT_NOT_FOUND": "评测结果不存在",
+  "LIST_EVAL_TASK_FAILED": "查询评测任务失败",
+  "READ_LOG_FAILED": "读取日志失败",
+  "CANCEL_TASK_FAILED": "终止任务失败",
+  "PREVIEW_ARTIFACT_FAILED": "预览产物失败",
+  "DOWNLOAD_ARTIFACT_FAILED": "下载产物失败",
+  "LIST_MODEL_FAILED": "加载模型预设失败",
+  "CREATE_MODEL_FAILED": "新增模型失败",
+  "UPDATE_MODEL_FAILED": "更新模型失败",
+  "DELETE_MODEL_FAILED": "删除模型失败",
+  "LIST_DATASET_FAILED": "加载数据集失败",
+  "CREATE_DATASET_FAILED": "新增数据集失败",
+  "UPDATE_DATASET_FAILED": "更新数据集失败",
+  "DELETE_DATASET_FAILED": "删除数据集失败",
+  "SYNC_DATASET_FAILED": "同步数据集失败"
+}

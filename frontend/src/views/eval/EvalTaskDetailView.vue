@@ -1,19 +1,19 @@
 <template>
   <div class="task-detail">
     <PageHeader
-      :title="'任务详情'"
+      :title="$t('eval.detail.title')"
       :description="pageDescription"
     >
       <template #actions>
         <el-button @click="$router.push({ name: 'eval-task-list' })">
-          返回列表
+          {{ $t("eval.detail.back") }}
         </el-button>
         <el-button
           icon="el-icon-refresh"
           :loading="loading"
           @click="loadAll"
         >
-          刷新
+          {{ $t("common.actions.refresh") }}
         </el-button>
         <el-button
           v-if="task && canCancel"
@@ -23,7 +23,7 @@
           :loading="cancelling"
           @click="handleCancel"
         >
-          终止评测
+          {{ $t("eval.detail.cancel") }}
         </el-button>
         <el-button
           type="primary"
@@ -31,7 +31,7 @@
           @click="rerun"
           :disabled="!task"
         >
-          再次评测
+          {{ $t("eval.detail.rerun") }}
         </el-button>
       </template>
     </PageHeader>
@@ -64,7 +64,7 @@
         v-if="task.errorMessage"
         type="error"
         :closable="false"
-        :title="task.errorCode || '执行失败'"
+        :title="task.errorCode || $t('eval.detail.errorTitle')"
         :description="task.errorMessage"
         class="error-alert"
         show-icon
@@ -73,7 +73,7 @@
 
     <el-card shadow="never">
       <el-tabs v-model="activeTab">
-        <el-tab-pane label="概览" name="overview">
+        <el-tab-pane :label="$t('eval.detail.tabs.overview')" name="overview">
           <el-descriptions
             v-if="task"
             :column="2"
@@ -81,38 +81,48 @@
             size="small"
             label-class-name="desc-label"
           >
-            <el-descriptions-item label="任务名称">{{ task.taskName || "—" }}</el-descriptions-item>
-            <el-descriptions-item label="任务 ID">{{ task.evalTaskId }}</el-descriptions-item>
-            <el-descriptions-item label="状态">
+            <el-descriptions-item :label="$t('eval.detail.overview.taskName')">
+              {{ task.taskName || "—" }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('eval.detail.overview.taskId')">
+              {{ task.evalTaskId }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('eval.detail.overview.status')">
               <StatusTag :status="task.status" />
             </el-descriptions-item>
-            <el-descriptions-item label="模型 Provider">
+            <el-descriptions-item :label="$t('eval.detail.overview.modelProvider')">
               {{ task.modelProvider || "-" }}
             </el-descriptions-item>
-            <el-descriptions-item label="模型名称">
+            <el-descriptions-item :label="$t('eval.detail.overview.modelName')">
               {{ task.modelName || "-" }}
             </el-descriptions-item>
-            <el-descriptions-item label="Base URL">
+            <el-descriptions-item :label="$t('eval.detail.overview.baseUrl')">
               {{ task.modelBaseUrl || "-" }}
             </el-descriptions-item>
-            <el-descriptions-item label="数据集">
+            <el-descriptions-item :label="$t('eval.detail.overview.dataset')">
               {{ task.datasetName || "-" }} ({{ datasetText }})
             </el-descriptions-item>
-            <el-descriptions-item label="创建时间">{{ formatTime(task.createdAt) }}</el-descriptions-item>
-            <el-descriptions-item label="开始时间">{{ formatTime(task.startedAt) }}</el-descriptions-item>
-            <el-descriptions-item label="结束时间">{{ formatTime(task.finishedAt) }}</el-descriptions-item>
-            <el-descriptions-item label="错误信息">
+            <el-descriptions-item :label="$t('eval.detail.overview.createdAt')">
+              {{ formatTime(task.createdAt) }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('eval.detail.overview.startedAt')">
+              {{ formatTime(task.startedAt) }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('eval.detail.overview.finishedAt')">
+              {{ formatTime(task.finishedAt) }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('eval.detail.overview.errorMessage')">
               {{ task.errorMessage || "-" }}
             </el-descriptions-item>
           </el-descriptions>
-          <EmptyState v-else type="loading" title="加载中" />
+          <EmptyState v-else type="loading" :title="$t('eval.detail.loading')" />
         </el-tab-pane>
 
-        <el-tab-pane label="评测指标" name="metrics">
+        <el-tab-pane :label="$t('eval.detail.tabs.metrics')" name="metrics">
           <MetricsTable :metrics="metrics" />
         </el-tab-pane>
 
-        <el-tab-pane label="产物" name="artifacts">
+        <el-tab-pane :label="$t('eval.detail.tabs.artifacts')" name="artifacts">
           <ArtifactList
             :eval-task-id="evalTaskId"
             :report-path="result?.reportPath || ''"
@@ -122,7 +132,7 @@
           />
         </el-tab-pane>
 
-        <el-tab-pane label="日志" name="log">
+        <el-tab-pane :label="$t('eval.detail.tabs.log')" name="log">
           <LogViewer :eval-task-id="evalTaskId" :task-status="task && task.status || ''" />
         </el-tab-pane>
       </el-tabs>
@@ -185,6 +195,7 @@ export default {
     },
     progressLabel() {
       if (!this.task) return "";
+      this.$i18n.locale; // eslint-disable-line no-unused-expressions
       const text = getEvalStatusText(this.task.status);
       const pct = getEvalStatusProgress(this.task.status);
       return `${text} · ${pct}%`;
@@ -194,7 +205,7 @@ export default {
       if (this.task.taskName) {
         return `${this.task.taskName} · ${this.task.evalTaskId}`;
       }
-      return `任务 ID: ${this.task.evalTaskId}`;
+      return `${this.$t("eval.detail.taskIdLabel")}: ${this.task.evalTaskId}`;
     }
   },
   watch: {
@@ -262,9 +273,13 @@ export default {
       if (!this.task) return;
       try {
         await this.$confirm(
-          "确定要终止该评测任务吗？已经产生的部分产物会保留，但不会继续推理后续数据集。",
-          "终止评测",
-          { type: "warning", confirmButtonText: "确定终止", cancelButtonText: "取消" }
+          this.$t("eval.detail.cancelConfirmContent"),
+          this.$t("eval.detail.cancelConfirmTitle"),
+          {
+            type: "warning",
+            confirmButtonText: this.$t("eval.detail.cancelConfirmOk"),
+            cancelButtonText: this.$t("eval.detail.cancelConfirmCancel")
+          }
         );
       } catch (e) {
         return;
@@ -272,7 +287,7 @@ export default {
       this.cancelling = true;
       try {
         await cancelEvalTask(this.evalTaskId);
-        this.$message.success("已请求终止");
+        this.$message.success(this.$t("eval.detail.cancelRequested"));
         await this.loadAll();
       } finally {
         this.cancelling = false;

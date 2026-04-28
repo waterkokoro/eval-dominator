@@ -19,6 +19,26 @@
           <span>{{ healthLabel }}</span>
         </span>
       </el-tooltip>
+      <el-dropdown
+        trigger="click"
+        @command="handleLangCommand"
+      >
+        <span class="user-trigger lang-trigger" :title="$t('common.language.switch')">
+          <i class="el-icon-s-platform" />
+          <span>{{ currentLangLabel }}</span>
+          <i class="el-icon-arrow-down" />
+        </span>
+        <el-dropdown-menu slot="dropdown">
+          <el-dropdown-item
+            v-for="lang in languages"
+            :key="lang.code"
+            :command="lang.code"
+            :disabled="lang.code === currentLang"
+          >
+            {{ lang.label }}
+          </el-dropdown-item>
+        </el-dropdown-menu>
+      </el-dropdown>
       <el-dropdown trigger="click" @command="handleCommand">
         <span class="user-trigger">
           <i class="el-icon-user-solid user-avatar" />
@@ -26,8 +46,8 @@
           <i class="el-icon-arrow-down" />
         </span>
         <el-dropdown-menu slot="dropdown">
-          <el-dropdown-item command="about">关于系统</el-dropdown-item>
-          <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+          <el-dropdown-item command="about">{{ $t("auth.header.about") }}</el-dropdown-item>
+          <el-dropdown-item divided command="logout">{{ $t("auth.header.logout") }}</el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
     </div>
@@ -39,12 +59,14 @@ import { appStore, toggleSidebar, setHealth } from "@/store/app";
 import { userStore, logoutLocal } from "@/store/user";
 import { getSystemHealth } from "@/api/system";
 import { logout } from "@/api/auth";
+import { LANGUAGES, setLanguage } from "@/locales";
 
 export default {
   name: "AppHeader",
   data() {
     return {
-      timer: null
+      timer: null,
+      languages: LANGUAGES.map((l) => ({ code: l.code, label: l.label }))
     };
   },
   computed: {
@@ -52,10 +74,12 @@ export default {
       return appStore.collapsed;
     },
     groupTitle() {
-      return this.$route.meta?.group || "";
+      const key = this.$route.meta?.groupKey;
+      return key ? this.$t(key) : "";
     },
     pageTitle() {
-      return this.$route.meta?.title || "";
+      const key = this.$route.meta?.titleKey;
+      return key ? this.$t(key) : "";
     },
     health() {
       return appStore.health;
@@ -67,17 +91,31 @@ export default {
       return "down";
     },
     healthLabel() {
-      const map = { ok: "服务正常", down: "服务异常", unknown: "状态未知" };
+      const map = {
+        ok: this.$t("system.health.ok"),
+        down: this.$t("system.health.down"),
+        unknown: this.$t("system.health.unknown")
+      };
       return map[this.healthLevel];
     },
     healthText() {
       const { backend, core } = this.health;
       const fmt = (v) =>
-        v?.ok === null ? "未知" : v?.ok ? "正常" : v?.message || "异常";
+        v?.ok === null
+          ? this.$t("system.health.unknown_short")
+          : v?.ok
+            ? this.$t("system.health.ok_short")
+            : v?.message || this.$t("system.health.down_short");
       return `Backend: ${fmt(backend)} / Core: ${fmt(core)}`;
     },
     displayName() {
-      return userStore.user?.username || "未登录";
+      return userStore.user?.username || this.$t("auth.header.guest");
+    },
+    currentLang() {
+      return this.$i18n.locale;
+    },
+    currentLangLabel() {
+      return this.languages.find((l) => l.code === this.currentLang)?.label || this.currentLang;
     }
   },
   mounted() {
@@ -91,6 +129,9 @@ export default {
     onToggle() {
       toggleSidebar();
     },
+    handleLangCommand(code) {
+      setLanguage(code);
+    },
     async refreshHealth() {
       try {
         const data = await getSystemHealth();
@@ -100,8 +141,8 @@ export default {
         });
       } catch (e) {
         setHealth({
-          backend: { ok: false, message: "unreachable" },
-          core: { ok: false, message: "unreachable" }
+          backend: { ok: false, message: this.$t("system.health.unreachable") },
+          core: { ok: false, message: this.$t("system.health.unreachable") }
         });
       }
     },
@@ -180,6 +221,11 @@ export default {
   cursor: pointer;
   color: #303133;
   font-size: 14px;
+}
+
+.lang-trigger {
+  color: #606266;
+  font-size: 13px;
 }
 
 .user-avatar {

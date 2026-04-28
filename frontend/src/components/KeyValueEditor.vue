@@ -28,7 +28,7 @@
       type="text"
       @click="addRow"
     >
-      添加一项
+      {{ $t("common.actions.addItem") }}
     </el-button>
   </div>
 </template>

@@ -1,0 +1,23 @@
+{
+  "INVALID_ARGUMENT": "Invalid request parameters",
+  "UNAUTHORIZED": "Not signed in or session expired, please sign in again",
+  "LOGIN_FAILED": "Sign in failed",
+  "CHANGE_PASSWORD_FAILED": "Failed to change password",
+  "CREATE_EVAL_TASK_FAILED": "Failed to create evaluation task",
+  "EVAL_TASK_NOT_FOUND": "Evaluation task not found",
+  "EVAL_RESULT_NOT_FOUND": "Evaluation result not found",
+  "LIST_EVAL_TASK_FAILED": "Failed to list evaluation tasks",
+  "READ_LOG_FAILED": "Failed to read log",
+  "CANCEL_TASK_FAILED": "Failed to stop task",
+  "PREVIEW_ARTIFACT_FAILED": "Failed to preview artifact",
+  "DOWNLOAD_ARTIFACT_FAILED": "Failed to download artifact",
+  "LIST_MODEL_FAILED": "Failed to load model presets",
+  "CREATE_MODEL_FAILED": "Failed to add model",
+  "UPDATE_MODEL_FAILED": "Failed to update model",
+  "DELETE_MODEL_FAILED": "Failed to delete model",
+  "LIST_DATASET_FAILED": "Failed to load datasets",
+  "CREATE_DATASET_FAILED": "Failed to add dataset",
+  "UPDATE_DATASET_FAILED": "Failed to update dataset",
+  "DELETE_DATASET_FAILED": "Failed to delete dataset",
+  "SYNC_DATASET_FAILED": "Failed to sync datasets"
+}

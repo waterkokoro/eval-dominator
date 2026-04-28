@@ -1,0 +1,51 @@
+{
+  "group": "Models",
+  "list": {
+    "title": "Models",
+    "description": "Manage model presets used for evaluation: provider + model name + Base URL + API Key",
+    "create": "Add model",
+    "columns": {
+      "model": "Model",
+      "provider": "Provider",
+      "baseUrl": "Base URL",
+      "maskedKey": "Masked key",
+      "createdAt": "Created at",
+      "actions": "Actions"
+    },
+    "empty": "No model presets yet. Click \"Add model\" to start.",
+    "loadFailed": "Failed to load model presets"
+  },
+  "dialog": {
+    "createTitle": "Add model",
+    "editTitle": "Edit model",
+    "fields": {
+      "provider": "Provider",
+      "providerPlaceholder": "e.g. openai-compatible / dashscope / openai",
+      "modelName": "Model name",
+      "modelNamePlaceholder": "The \"model\" value sent to the API, e.g. qwen-plus / gpt-4o-mini",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Alias for the UI (defaults to model name when empty)",
+      "version": "Custom version",
+      "versionPlaceholder": "Optional. Distinguish runs of the same model, e.g. 2025-04-pre",
+      "baseUrl": "Endpoint",
+      "baseUrlPlaceholder": "OpenAI-compatible baseUrl, e.g. https://api.example.com/v1",
+      "apiKey": "API Key",
+      "apiKeyEditPlaceholder": "Empty = keep existing; otherwise replace.",
+      "apiKeyCreatePlaceholder": "Full API Key (e.g. sk-xxx..., at least 16 chars)"
+    },
+    "rules": {
+      "providerRequired": "Please enter the provider",
+      "modelNameRequired": "Please enter the model name",
+      "baseUrlRequired": "Please enter the Base URL",
+      "apiKeyRequired": "Please enter the API Key",
+      "apiKeyMinLength": "API Key looks too short (< 16). Please double-check."
+    }
+  },
+  "messages": {
+    "deleteConfirm": "Delete model \"{name}\"?",
+    "saveSuccess": "Saved",
+    "saveFailed": "Failed to save",
+    "deleteSuccess": "Deleted",
+    "deleteFailed": "Failed to delete"
+  }
+}

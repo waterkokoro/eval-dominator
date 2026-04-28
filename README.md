@@ -31,18 +31,94 @@
 
 > **状态：MVP（v0.1.0-mvp），迭代中。** 目前只在本机单用户场景验证，不建议直接公网部署。
 
+## 界面预览
+
+> 任务列表是首页，覆盖创建/查询/筛选等主要操作。
+
+<p align="center">
+  <img src="./eval-img/zh/task-list.png" alt="任务列表" width="900"/>
+</p>
+
+> 任务详情：阶段进度、模型 / 数据集元信息、指标可视化、产物预览/下载。
+
+<p align="center">
+  <img src="./eval-img/zh/task-detail01.png" alt="任务详情 - 概览" width="900"/>
+</p>
+
+> 详情页内嵌实时日志，自动跟随最新 infer 子集。
+
+<p align="center">
+  <img src="./eval-img/zh/task-detail-log.png" alt="任务详情 - 日志" width="900"/>
+</p>
+
+> 提交评测：选择模型来源（API / 本地）、数据集、运行参数。
+
+<p align="center">
+  <img src="./eval-img/zh/submit.png" alt="提交评测 - 模型与数据集" width="900"/>
+</p>
+
+<p align="center">
+  <img src="./eval-img/zh/submit02.png" alt="提交评测 - 数据集与运行参数" width="900"/>
+</p>
+
+> 模型管理：维护可复用的 OpenAI 兼容预设，API Key 脱敏回显。
+
+<p align="center">
+  <img src="./eval-img/zh/model.png" alt="模型管理" width="900"/>
+</p>
+
 ## 它是什么
 
-把"评测一个 LLM"的流程拆成三层：
+把"评测一个 LLM"的流程拆成三层，每一层之间都有稳定的契约：
 
 - **Frontend** (Vue2 + ElementUI)：登录、提交评测、跟踪进度、看指标和产物。
 - **Backend** (Go + Gin + SQLite)：账号、任务编排与持久化、对外暴露 REST API。
 - **Core** (Python + gRPC + OpenCompass)：实际驱动 OpenCompass 跑模型评测，被 Backend 通过 gRPC 调用。
 
+### 调用架构
+
+```mermaid
+flowchart LR
+    subgraph browser ["浏览器 / Browser"]
+      UI["Vue 2 + ElementUI<br/>i18n: zh-CN / en-US"]
+    end
+
+    subgraph backend ["Go Backend :8080"]
+      Gin["Gin REST API"]
+      AppSvc["业务服务 application<br/>auth · model · dataset · eval"]
+    end
+
+    subgraph core ["Python Core :50051"]
+      Grpc["gRPC EvalService"]
+      Adapter["OpenCompass adapter<br/>+ subprocess runner"]
+    end
+
+    subgraph oc ["OpenCompass 子进程"]
+      Cli["opencompass CLI"]
+    end
+
+    subgraph storage ["本地存储 / Local storage"]
+      DB[("SQLite<br/>users · models · datasets · eval_tasks")]
+      FS["runtime/任务ID/<br/>summary · infer · predictions"]
+    end
+
+    UI -->|"HTTP /api Bearer JWT"| Gin
+    Gin --> AppSvc
+    AppSvc <--> DB
+    AppSvc -->|"gRPC CreateTask / GetStatus / Cancel"| Grpc
+    Grpc --> Adapter
+    Adapter -->|"spawn 进程组 + mmengine .py 配置"| Cli
+    Cli -->|"写入产物"| FS
+    Adapter -->|"tail log / 解析 summary"| FS
+    AppSvc -.->|"产物预览 / 下载"| FS
+```
+
+简化版（一行版）：
+
 ```
 浏览器 ──HTTP──▶ Go Backend ──gRPC──▶ Python Core ──subprocess──▶ OpenCompass CLI
-                    │
-                  SQLite
+                    │                                               │
+                  SQLite                                        runtime/
 ```
 
 ## 主要特性（MVP）
@@ -54,6 +130,7 @@
 - ✅ 任务列表（搜索 / 时间筛选 / 多状态过滤）
 - ✅ 任务详情：阶段进度、指标可视化（自动百分比识别）、产物在线预览 & 下载、实时日志（自动跟最新 infer 子集）
 - ✅ 任务终止（SIGTERM/SIGKILL 整个 OpenCompass 进程组）
+- ✅ 前端多语言（中文 / English）：基于 vue-i18n + ElementUI 内置 locale，文案集中在 `frontend/src/locales/{zh-CN,en-US}/*.json`，新增语种只需注册一项即可
 - 🚧 评测角色 / 模板（多模型 + judge 编排，规划中，详见 [`md/评测角色与模板规划-2026-04-27-v1.md`](./md/评测角色与模板规划-2026-04-27-v1.md)）
 - 🚧 本地 HuggingFace 模型 + PPL 数据集
 - 🚧 用户系统、权限、多人协作

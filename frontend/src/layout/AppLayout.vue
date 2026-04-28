@@ -41,7 +41,7 @@ export default {
         const data = await fetchCurrentUser();
         if (data) setUser(data);
       } catch (e) {
-        // 后端未就绪时不阻塞页面
+        // backend may not be ready; do not block the page
       }
     }
   }

@@ -1,0 +1,76 @@
+{
+  "group": "Datasets",
+  "list": {
+    "title": "Datasets",
+    "description": "Manage datasets used for evaluation. Pick from this list when submitting a task.",
+    "syncBuiltin": "Sync built-in datasets",
+    "addCustom": "Add custom",
+    "filters": {
+      "includeDisabled": "Include disabled",
+      "source": "Source",
+      "all": "All",
+      "builtin": "Built-in",
+      "custom": "Custom"
+    },
+    "columns": {
+      "dataset": "Dataset",
+      "description": "Description",
+      "inferenceMode": "Mode",
+      "sampleCount": "Samples",
+      "enabled": "Enabled",
+      "actions": "Actions"
+    },
+    "actions": {
+      "use": "Use",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "inferenceMode": {
+      "gen": "GEN (generative)",
+      "ppl": "PPL (perplexity)"
+    },
+    "empty": "No datasets yet. Click \"Sync built-in datasets\" or \"Add custom\".",
+    "loadFailed": "Failed to load datasets"
+  },
+  "type": {
+    "opencompass_demo": "OpenCompass Demo",
+    "opencompass_standard": "OpenCompass Standard",
+    "custom": "Custom",
+    "unknown": "Unknown dataset"
+  },
+  "source": {
+    "builtin": "Built-in",
+    "custom": "Custom"
+  },
+  "dialog": {
+    "createTitle": "Add custom dataset",
+    "editTitle": "Edit custom dataset",
+    "fields": {
+      "code": "Dataset code",
+      "codePlaceholder": "OpenCompass dataset config name, e.g. demo_gsm8k_chat_gen",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Name shown in the UI",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional dataset description",
+      "sampleCount": "Samples",
+      "type": "Type",
+      "typePlaceholder": "custom / opencompass_standard ..."
+    },
+    "rules": {
+      "codeRequired": "Please enter the code",
+      "displayNameRequired": "Please enter the display name"
+    }
+  },
+  "messages": {
+    "syncSuccess": "Sync done: scanned {scanned}, inserted {inserted}, updated {updated}",
+    "syncFailed": "Sync failed",
+    "toggleEnabled": "Enabled",
+    "toggleDisabled": "Disabled",
+    "toggleFailed": "Failed to toggle",
+    "saveSuccess": "Saved",
+    "saveFailed": "Failed to save",
+    "deleteConfirm": "Delete \"{name}\"?",
+    "deleteSuccess": "Deleted",
+    "deleteFailed": "Failed to delete"
+  }
+}

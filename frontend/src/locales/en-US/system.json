@@ -1,0 +1,32 @@
+{
+  "group": "System",
+  "about": {
+    "title": "About",
+    "description": "Project info, service health, and usage tips.",
+    "refresh": "Refresh status",
+    "backendTitle": "Go backend",
+    "coreTitle": "Python core",
+    "waitingCheck": "Waiting",
+    "info": {
+      "title": "Project info",
+      "name": "Project",
+      "tagline": "Tagline",
+      "taglineValue": "Lightweight model evaluation hub wrapping OpenCompass primitives.",
+      "stack": "Stack",
+      "stackValue": "Vue2 + ElementUI · Go + Gin · Python core (gRPC) · SQLite",
+      "checkedAt": "Last health check",
+      "neverChecked": "never"
+    },
+    "pendingApis": "Backend endpoints pending",
+    "healthApiUnready": "/system/health endpoint pending on backend"
+  },
+  "health": {
+    "ok": "Service healthy",
+    "down": "Service unhealthy",
+    "unknown": "Status unknown",
+    "ok_short": "Healthy",
+    "down_short": "Unhealthy",
+    "unknown_short": "Unknown",
+    "unreachable": "unreachable"
+  }
+}

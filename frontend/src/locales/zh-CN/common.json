@@ -1,0 +1,57 @@
+{
+  "actions": {
+    "refresh": "刷新",
+    "submit": "提交",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确定",
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "reset": "重置",
+    "close": "关闭",
+    "search": "查询",
+    "addItem": "添加一项",
+    "copyPath": "复制路径",
+    "download": "下载",
+    "preview": "预览",
+    "expand": "展开",
+    "collapse": "收起"
+  },
+  "status": {
+    "all": "全部",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "succeeded": "正常",
+    "failed": "异常",
+    "unknown": "未知",
+    "loading": "加载中…",
+    "waiting": "等待检查"
+  },
+  "messages": {
+    "saveSuccess": "保存成功",
+    "deleteSuccess": "已删除",
+    "copySuccess": "路径已复制",
+    "requestFailed": "请求失败",
+    "loadFailed": "加载失败",
+    "saveFailed": "保存失败",
+    "deleteFailed": "删除失败",
+    "tip": "提示",
+    "empty": "暂无数据"
+  },
+  "fields": {
+    "name": "名称",
+    "createdAt": "创建时间",
+    "actions": "操作",
+    "status": "状态"
+  },
+  "placeholders": {
+    "selectAll": "全部",
+    "key": "key",
+    "value": "value"
+  },
+  "language": {
+    "label": "语言",
+    "switch": "切换语言"
+  }
+}

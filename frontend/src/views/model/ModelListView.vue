@@ -1,15 +1,15 @@
 <template>
   <div class="model-list">
     <PageHeader
-      title="模型管理"
-      description="管理可用于评测的模型预设：服务商 + 模型名 + Base URL + API Key"
+      :title="$t('model.list.title')"
+      :description="$t('model.list.description')"
     >
       <template #actions>
         <el-button icon="el-icon-refresh" :loading="loading" @click="loadList">
-          刷新
+          {{ $t("common.actions.refresh") }}
         </el-button>
         <el-button type="primary" icon="el-icon-plus" @click="openCreate">
-          新增模型
+          {{ $t("model.list.create") }}
         </el-button>
       </template>
     </PageHeader>
@@ -22,7 +22,7 @@
         size="small"
         stripe
       >
-        <el-table-column label="模型" min-width="220">
+        <el-table-column :label="$t('model.list.columns.model')" min-width="220">
           <template #default="{ row }">
             <div class="cell-main">
               <div class="cell-title">
@@ -33,26 +33,26 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="服务商" prop="provider" width="160" />
-        <el-table-column label="Base URL" prop="baseUrl" min-width="240">
+        <el-table-column :label="$t('model.list.columns.provider')" prop="provider" width="160" />
+        <el-table-column :label="$t('model.list.columns.baseUrl')" prop="baseUrl" min-width="240">
           <template #default="{ row }">
             <span class="mono">{{ row.baseUrl || "-" }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="脱敏 Key" min-width="160">
+        <el-table-column :label="$t('model.list.columns.maskedKey')" min-width="160">
           <template #default="{ row }">
             <span class="mono">{{ row.maskedKey || "******" }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="170">
+        <el-table-column :label="$t('model.list.columns.createdAt')" width="170">
           <template #default="{ row }">
             {{ formatTime(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" align="right">
+        <el-table-column :label="$t('model.list.columns.actions')" width="160" align="right">
           <template #default="{ row }">
             <el-button type="text" size="mini" @click="openEdit(row)">
-              编辑
+              {{ $t("common.actions.edit") }}
             </el-button>
             <el-button
               type="text"
@@ -60,7 +60,7 @@
               class="danger-btn"
               @click="handleDelete(row)"
             >
-              删除
+              {{ $t("common.actions.delete") }}
             </el-button>
           </template>
         </el-table-column>
@@ -68,7 +68,7 @@
     </el-card>
 
     <el-dialog
-      :title="dialog.id ? '编辑模型' : '新增模型'"
+      :title="dialog.id ? $t('model.dialog.editTitle') : $t('model.dialog.createTitle')"
       :visible.sync="dialog.visible"
       width="540px"
       append-to-body
@@ -77,47 +77,47 @@
       <el-form
         ref="dialogForm"
         :model="dialog.form"
-        :rules="dialog.rules"
+        :rules="dialogRules"
         label-width="120px"
         size="small"
       >
-        <el-form-item label="服务商" prop="provider">
-          <el-input v-model="dialog.form.provider" placeholder="例如 openai-compatible / dashscope / openai" />
+        <el-form-item :label="$t('model.dialog.fields.provider')" prop="provider">
+          <el-input v-model="dialog.form.provider" :placeholder="$t('model.dialog.fields.providerPlaceholder')" />
         </el-form-item>
-        <el-form-item label="模型名称" prop="modelName">
+        <el-form-item :label="$t('model.dialog.fields.modelName')" prop="modelName">
           <el-input
             v-model="dialog.form.modelName"
-            placeholder="API 调用的 model 字段，例如 qwen-plus / gpt-4o-mini"
+            :placeholder="$t('model.dialog.fields.modelNamePlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="备注名称">
+        <el-form-item :label="$t('model.dialog.fields.displayName')">
           <el-input
             v-model="dialog.form.displayName"
-            placeholder="界面展示用的别名（留空时与模型名一致）"
+            :placeholder="$t('model.dialog.fields.displayNamePlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="自定义版本">
+        <el-form-item :label="$t('model.dialog.fields.version')">
           <el-input
             v-model="dialog.form.version"
-            placeholder="可空。给同一模型测不同版本时区分，例如 2025-04-pre"
+            :placeholder="$t('model.dialog.fields.versionPlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="模型接口" prop="baseUrl">
-          <el-input v-model="dialog.form.baseUrl" placeholder="OpenAI 兼容 baseUrl，例如 https://api.example.com/v1" />
+        <el-form-item :label="$t('model.dialog.fields.baseUrl')" prop="baseUrl">
+          <el-input v-model="dialog.form.baseUrl" :placeholder="$t('model.dialog.fields.baseUrlPlaceholder')" />
         </el-form-item>
-        <el-form-item label="API Key" :prop="dialog.id ? '' : 'apiKey'">
+        <el-form-item :label="$t('model.dialog.fields.apiKey')" :prop="dialog.id ? '' : 'apiKey'">
           <el-input
             v-model="dialog.form.apiKey"
             type="password"
             show-password
-            :placeholder="dialog.id ? '留空表示不修改；填写则替换旧值' : '请输入完整 API Key（如 sk-xxx...，至少 16 位）'"
+            :placeholder="dialog.id ? $t('model.dialog.fields.apiKeyEditPlaceholder') : $t('model.dialog.fields.apiKeyCreatePlaceholder')"
           />
         </el-form-item>
       </el-form>
       <span slot="footer">
-        <el-button @click="dialog.visible = false">取消</el-button>
+        <el-button @click="dialog.visible = false">{{ $t("common.actions.cancel") }}</el-button>
         <el-button type="primary" :loading="dialog.saving" @click="handleSave">
-          保存
+          {{ $t("common.actions.save") }}
         </el-button>
       </span>
     </el-dialog>
@@ -134,6 +134,7 @@ import {
   deleteModel
 } from "@/api/model";
 import { formatDateTime } from "@/utils/time";
+import { resolveApiErrorMessage } from "@/api/http";
 
 const buildDialog = () => ({
   visible: false,
@@ -146,15 +147,6 @@ const buildDialog = () => ({
     version: "",
     baseUrl: "",
     apiKey: ""
-  },
-  rules: {
-    provider: [{ required: true, message: "请输入服务商", trigger: "blur" }],
-    modelName: [{ required: true, message: "请输入模型名称", trigger: "blur" }],
-    baseUrl: [{ required: true, message: "请输入 Base URL", trigger: "blur" }],
-    apiKey: [
-      { required: true, message: "请输入 API Key", trigger: "blur" },
-      { min: 16, message: "API Key 长度过短（< 16），请确认是否填错", trigger: "blur" }
-    ]
   }
 });
 
@@ -170,7 +162,19 @@ export default {
   },
   computed: {
     emptyText() {
-      return "暂无模型预设，点击右上角「新增模型」开始";
+      return this.$t("model.list.empty");
+    },
+    dialogRules() {
+      const t = (k) => this.$t(`model.dialog.rules.${k}`);
+      return {
+        provider: [{ required: true, message: t("providerRequired"), trigger: "blur" }],
+        modelName: [{ required: true, message: t("modelNameRequired"), trigger: "blur" }],
+        baseUrl: [{ required: true, message: t("baseUrlRequired"), trigger: "blur" }],
+        apiKey: [
+          { required: true, message: t("apiKeyRequired"), trigger: "blur" },
+          { min: 16, message: t("apiKeyMinLength"), trigger: "blur" }
+        ]
+      };
     }
   },
   created() {
@@ -188,7 +192,7 @@ export default {
         this.rows = items;
       } catch (error) {
         this.rows = [];
-        this.$message.error(error?.response?.data?.message || "加载模型预设失败");
+        this.$message.error(resolveApiErrorMessage(error) || this.$t("model.list.loadFailed"));
       } finally {
         this.loading = false;
       }
@@ -223,33 +227,33 @@ export default {
         } else {
           await createModel(payload);
         }
-        this.$message.success("保存成功");
+        this.$message.success(this.$t("model.messages.saveSuccess"));
         this.dialog.visible = false;
         this.loadList();
       } catch (error) {
-        this.$message.error(
-          error?.response?.data?.message || "保存失败"
-        );
+        this.$message.error(resolveApiErrorMessage(error) || this.$t("model.messages.saveFailed"));
       } finally {
         this.dialog.saving = false;
       }
     },
     async handleDelete(row) {
       try {
-        await this.$confirm(`确认删除模型「${row.displayName || row.modelName}」？`, "提示", {
-          type: "warning"
-        });
+        await this.$confirm(
+          this.$t("model.messages.deleteConfirm", {
+            name: row.displayName || row.modelName
+          }),
+          this.$t("common.messages.tip"),
+          { type: "warning" }
+        );
       } catch (e) {
         return;
       }
       try {
         await deleteModel(row.id);
-        this.$message.success("已删除");
+        this.$message.success(this.$t("model.messages.deleteSuccess"));
         this.loadList();
       } catch (error) {
-        this.$message.error(
-          error?.response?.data?.message || "删除失败"
-        );
+        this.$message.error(resolveApiErrorMessage(error) || this.$t("model.messages.deleteFailed"));
       }
     }
   }

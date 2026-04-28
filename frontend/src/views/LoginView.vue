@@ -5,7 +5,7 @@
         <div class="brand-mark">ED</div>
         <div class="brand-meta">
           <div class="brand-title">Eval Dominator</div>
-          <div class="brand-sub">轻量级模型评测中心</div>
+          <div class="brand-sub">{{ $t("auth.login.brandSub") }}</div>
         </div>
       </div>
       <el-form
@@ -19,7 +19,7 @@
           <el-input
             v-model="form.username"
             prefix-icon="el-icon-user"
-            placeholder="用户名"
+            :placeholder="$t('auth.login.username')"
             autocomplete="username"
             size="medium"
           />
@@ -28,7 +28,7 @@
           <el-input
             v-model="form.password"
             prefix-icon="el-icon-lock"
-            placeholder="密码"
+            :placeholder="$t('auth.login.password')"
             type="password"
             autocomplete="current-password"
             size="medium"
@@ -41,10 +41,10 @@
           class="login-button"
           @click="handleLogin"
         >
-          登录
+          {{ $t("auth.login.submit") }}
         </el-button>
       </el-form>
-      <div class="login-tip">登录后可使用提交评测、任务管理等功能。</div>
+      <div class="login-tip">{{ $t("auth.login.tip") }}</div>
     </div>
   </div>
 </template>
@@ -62,16 +62,20 @@ export default {
       form: {
         username: "",
         password: ""
-      },
-      rules: {
-        username: [
-          { required: true, message: "请输入用户名", trigger: "blur" }
-        ],
-        password: [
-          { required: true, message: "请输入密码", trigger: "blur" }
-        ]
       }
     };
+  },
+  computed: {
+    rules() {
+      return {
+        username: [
+          { required: true, message: this.$t("auth.login.usernameRequired"), trigger: "blur" }
+        ],
+        password: [
+          { required: true, message: this.$t("auth.login.passwordRequired"), trigger: "blur" }
+        ]
+      };
+    }
   },
   methods: {
     async handleLogin() {
@@ -88,7 +92,7 @@ export default {
         } catch (e) {
           setUser({ username: this.form.username });
         }
-        this.$message.success("登录成功");
+        this.$message.success(this.$t("auth.login.success"));
         const redirect = this.$route.query.redirect || "/eval/tasks";
         this.$router.replace(redirect);
       } finally {

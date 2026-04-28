@@ -2,8 +2,10 @@
   <div class="log-viewer">
     <div class="log-toolbar">
       <span class="log-title">
-        最近 {{ tail }} 行日志
-        <el-tag v-if="autoRefresh" size="mini" effect="dark" type="warning">自动刷新</el-tag>
+        {{ $t("eval.log.tail", { count: tail }) }}
+        <el-tag v-if="autoRefresh" size="mini" effect="dark" type="warning">
+          {{ $t("eval.log.autoRefresh") }}
+        </el-tag>
       </span>
       <div class="log-actions">
         <el-checkbox
@@ -12,10 +14,10 @@
           class="auto-refresh-toggle"
           size="small"
         >
-          自动刷新
+          {{ $t("eval.log.autoRefresh") }}
         </el-checkbox>
         <el-button size="mini" :loading="loading" @click="handleReload">
-          刷新日志
+          {{ $t("eval.log.refresh") }}
         </el-button>
       </div>
     </div>
@@ -24,14 +26,14 @@
       <EmptyState
         v-else-if="errorText"
         type="error"
-        title="日志暂不可用"
+        :title="$t('eval.log.unavailable')"
         :description="errorText"
       />
       <EmptyState
         v-else
         type="todo"
-        title="暂无日志"
-        description="任务开始执行后，OpenCompass 主日志会写入并显示在此"
+        :title="$t('eval.log.empty')"
+        :description="$t('eval.log.emptyDescription')"
       />
     </div>
   </div>
@@ -41,6 +43,7 @@
 import EmptyState from "@/components/EmptyState.vue";
 import { getEvalTaskLog } from "@/api/eval-task";
 import { isEvalStatusFinal } from "@/constants/eval-status";
+import { resolveApiErrorMessage } from "@/api/http";
 
 export default {
   name: "LogViewer",
@@ -103,7 +106,7 @@ export default {
         const content = data?.content || data?.log || "";
         this.content = content;
         if (!content) {
-          this.errorText = "暂无日志内容";
+          this.errorText = this.$t("eval.log.emptyContent");
         }
         this.$nextTick(() => {
           if (this.$refs.logContent) {
@@ -112,9 +115,7 @@ export default {
         });
       } catch (error) {
         this.content = "";
-        this.errorText =
-          error?.response?.data?.message ||
-          "拉取日志失败";
+        this.errorText = resolveApiErrorMessage(error) || this.$t("eval.log.loadFailed");
       } finally {
         this.loading = false;
       }

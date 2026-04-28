@@ -1,0 +1,51 @@
+{
+  "group": "模型管理",
+  "list": {
+    "title": "模型管理",
+    "description": "管理可用于评测的模型预设：服务商 + 模型名 + Base URL + API Key",
+    "create": "新增模型",
+    "columns": {
+      "model": "模型",
+      "provider": "服务商",
+      "baseUrl": "Base URL",
+      "maskedKey": "脱敏 Key",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    },
+    "empty": "暂无模型预设，点击右上角「新增模型」开始",
+    "loadFailed": "加载模型预设失败"
+  },
+  "dialog": {
+    "createTitle": "新增模型",
+    "editTitle": "编辑模型",
+    "fields": {
+      "provider": "服务商",
+      "providerPlaceholder": "例如 openai-compatible / dashscope / openai",
+      "modelName": "模型名称",
+      "modelNamePlaceholder": "API 调用的 model 字段，例如 qwen-plus / gpt-4o-mini",
+      "displayName": "备注名称",
+      "displayNamePlaceholder": "界面展示用的别名（留空时与模型名一致）",
+      "version": "自定义版本",
+      "versionPlaceholder": "可空。给同一模型测不同版本时区分，例如 2025-04-pre",
+      "baseUrl": "模型接口",
+      "baseUrlPlaceholder": "OpenAI 兼容 baseUrl，例如 https://api.example.com/v1",
+      "apiKey": "API Key",
+      "apiKeyEditPlaceholder": "留空表示不修改；填写则替换旧值",
+      "apiKeyCreatePlaceholder": "请输入完整 API Key（如 sk-xxx...，至少 16 位）"
+    },
+    "rules": {
+      "providerRequired": "请输入服务商",
+      "modelNameRequired": "请输入模型名称",
+      "baseUrlRequired": "请输入 Base URL",
+      "apiKeyRequired": "请输入 API Key",
+      "apiKeyMinLength": "API Key 长度过短（< 16），请确认是否填错"
+    }
+  },
+  "messages": {
+    "deleteConfirm": "确认删除模型「{name}」？",
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败",
+    "deleteSuccess": "已删除",
+    "deleteFailed": "删除失败"
+  }
+}

@@ -1,14 +1,21 @@
-export const evalStatusText = {
-  pending: "等待执行",
-  validating: "校验配置",
-  building: "构建配置",
-  running: "执行评测",
-  parsing: "解析结果",
-  succeeded: "执行成功",
-  failed: "执行失败",
-  timeout: "执行超时",
-  cancelled: "已终止"
-};
+import i18n from "@/locales";
+
+/**
+ * 任务状态枚举与本地化无关的属性（颜色、进度、tag 类型）。
+ * 文案统一通过 i18n key `eval.status.<status>` 取，避免硬编码任何具体语言。
+ */
+
+export const EVAL_STATUS_KEYS = [
+  "pending",
+  "validating",
+  "building",
+  "running",
+  "parsing",
+  "succeeded",
+  "failed",
+  "timeout",
+  "cancelled"
+];
 
 export const evalStatusType = {
   pending: "info",
@@ -34,13 +41,23 @@ export const evalStatusProgress = {
   cancelled: 100
 };
 
-export const evalStatusOptions = Object.keys(evalStatusText).map((value) => ({
-  value,
-  label: evalStatusText[value]
-}));
+/**
+ * 状态筛选下拉的选项。返回的是函数而非常量，因为 label 依赖当前语言；
+ * 直接在模板的 computed 里调用即可让选项跟随切语言更新。
+ */
+export function getEvalStatusOptions() {
+  return EVAL_STATUS_KEYS.map((value) => ({
+    value,
+    label: i18n.t(`eval.status.${value}`)
+  }));
+}
 
 export function getEvalStatusText(status) {
-  return evalStatusText[status] || status || "未知状态";
+  if (!status) return i18n.t("eval.status.unknown");
+  if (EVAL_STATUS_KEYS.includes(status)) {
+    return i18n.t(`eval.status.${status}`);
+  }
+  return status;
 }
 
 export function getEvalStatusType(status) {

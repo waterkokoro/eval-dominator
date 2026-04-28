@@ -1,17 +1,17 @@
 <template>
   <div>
     <el-table v-if="rows.length" :data="rows" border size="small">
-      <el-table-column prop="label" label="类型" width="160">
+      <el-table-column prop="label" :label="$t('eval.artifacts.columns.type')" width="160">
         <template #default="{ row }">
           <el-tag size="small" :type="row.tagType">{{ row.label }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="path" label="路径" min-width="280">
+      <el-table-column prop="path" :label="$t('eval.artifacts.columns.path')" min-width="280">
         <template #default="{ row }">
           <span class="artifact-path" :title="row.path">{{ row.path || "-" }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="240" align="right">
+      <el-table-column :label="$t('eval.artifacts.columns.actions')" width="240" align="right">
         <template #default="{ row }">
           <el-button
             size="mini"
@@ -19,7 +19,7 @@
             :disabled="!row.path"
             @click="handlePreview(row)"
           >
-            预览
+            {{ $t("eval.artifacts.actions.preview") }}
           </el-button>
           <el-button
             size="mini"
@@ -27,7 +27,7 @@
             :disabled="!row.path"
             @click="handleDownload(row)"
           >
-            下载
+            {{ $t("eval.artifacts.actions.download") }}
           </el-button>
           <el-button
             size="mini"
@@ -35,7 +35,7 @@
             :disabled="!row.path"
             @click="handleCopy(row)"
           >
-            复制路径
+            {{ $t("eval.artifacts.actions.copy") }}
           </el-button>
         </template>
       </el-table-column>
@@ -43,11 +43,15 @@
     <EmptyState
       v-else
       type="todo"
-      title="暂无产物"
-      description="任务完成后将在此展示报告、原始结果与日志路径"
+      :title="$t('eval.artifacts.empty.title')"
+      :description="$t('eval.artifacts.empty.description')"
     />
     <p class="artifact-tip">
-      产物文件均位于服务端 <code>runtime/</code> 输出目录下，「预览」最多展示 512KB 文本，超出请用「下载」。
+      <i18n path="eval.artifacts.tip" tag="span">
+        <template #dir>
+          <code>runtime/</code>
+        </template>
+      </i18n>
     </p>
 
     <el-dialog
@@ -64,20 +68,26 @@
           type="warning"
           show-icon
           :closable="false"
-          title="内容超过 512KB，已截断显示。完整内容请下载。"
+          :title="$t('eval.artifacts.preview.truncated')"
           style="margin-bottom: 12px"
         />
         <div class="preview-meta">
-          <span class="preview-meta-item"><strong>路径：</strong>{{ preview.relativePath || preview.path }}</span>
-          <span class="preview-meta-item"><strong>大小：</strong>{{ formatSize(preview.size) }}</span>
+          <span class="preview-meta-item">
+            <strong>{{ $t("eval.artifacts.preview.path") }}</strong>{{ preview.relativePath || preview.path }}
+          </span>
+          <span class="preview-meta-item">
+            <strong>{{ $t("eval.artifacts.preview.size") }}</strong>{{ formatSize(preview.size) }}
+          </span>
         </div>
-        <pre class="preview-content">{{ preview.content || (preview.error || "(空)") }}</pre>
+        <pre class="preview-content">{{ preview.content || (preview.error || $t("eval.artifacts.preview.empty")) }}</pre>
       </div>
       <template #footer>
         <el-button v-if="preview.path" @click="handleDownload({ path: preview.path, label: preview.title })">
-          下载完整文件
+          {{ $t("eval.artifacts.actions.downloadFull") }}
         </el-button>
-        <el-button type="primary" @click="preview.visible = false">关闭</el-button>
+        <el-button type="primary" @click="preview.visible = false">
+          {{ $t("common.actions.close") }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -86,13 +96,14 @@
 <script>
 import EmptyState from "@/components/EmptyState.vue";
 import { previewArtifact, downloadArtifact } from "@/api/artifact";
+import { resolveApiErrorMessage } from "@/api/http";
 
-const TYPE_LABELS = {
-  report: { label: "评测报告", tagType: "success" },
-  raw_result: { label: "原始结果", tagType: "warning" },
-  log: { label: "执行日志", tagType: "info" },
-  config: { label: "评测配置", tagType: "" },
-  other: { label: "其他", tagType: "info" }
+const TYPE_KEYS = {
+  report: { tagType: "success" },
+  raw_result: { tagType: "warning" },
+  log: { tagType: "info" },
+  config: { tagType: "" },
+  other: { tagType: "info" }
 };
 
 export default {
@@ -124,25 +135,36 @@ export default {
     rows() {
       const list = [];
       if (this.reportPath) {
-        list.push({ key: "report", ...TYPE_LABELS.report, path: this.reportPath });
+        list.push({
+          key: "report",
+          label: this.typeLabel("report"),
+          tagType: TYPE_KEYS.report.tagType,
+          path: this.reportPath
+        });
       }
       if (this.rawResultPath) {
         list.push({
           key: "raw_result",
-          ...TYPE_LABELS.raw_result,
+          label: this.typeLabel("raw_result"),
+          tagType: TYPE_KEYS.raw_result.tagType,
           path: this.rawResultPath
         });
       }
       if (this.logPath) {
-        list.push({ key: "log", ...TYPE_LABELS.log, path: this.logPath });
+        list.push({
+          key: "log",
+          label: this.typeLabel("log"),
+          tagType: TYPE_KEYS.log.tagType,
+          path: this.logPath
+        });
       }
 
       const parsed = this.parseArtifacts();
       parsed.forEach((item) => {
-        const meta = TYPE_LABELS[item.type] || TYPE_LABELS.other;
+        const meta = TYPE_KEYS[item.type] || TYPE_KEYS.other;
         list.push({
           key: `${item.type || "other"}-${item.name || item.path}`,
-          label: item.name || meta.label,
+          label: item.name || this.typeLabel(item.type || "other"),
           tagType: meta.tagType,
           path: item.path
         });
@@ -158,6 +180,10 @@ export default {
     }
   },
   methods: {
+    typeLabel(type) {
+      const key = TYPE_KEYS[type] ? type : "other";
+      return this.$t(`eval.artifacts.types.${key}`);
+    },
     parseArtifacts() {
       const raw = this.artifacts;
       if (!raw) return [];
@@ -178,7 +204,7 @@ export default {
       this.preview = {
         visible: true,
         loading: true,
-        title: row.label || "产物预览",
+        title: row.label || this.$t("eval.artifacts.preview.fallbackTitle"),
         path: row.path,
         relativePath: "",
         size: 0,
@@ -193,12 +219,12 @@ export default {
         this.preview.truncated = !!resp?.truncated;
         if (resp?.isText === false) {
           this.preview.content = "";
-          this.preview.error = "二进制文件不支持预览，请下载查看。";
+          this.preview.error = this.$t("eval.artifacts.preview.binary");
         } else {
           this.preview.content = resp?.content ?? "";
         }
       } catch (e) {
-        this.preview.error = e?.response?.data?.message || e?.message || "预览失败";
+        this.preview.error = resolveApiErrorMessage(e) || this.$t("eval.artifacts.preview.failed");
       } finally {
         this.preview.loading = false;
       }
@@ -209,7 +235,7 @@ export default {
         const filename = row.path.split(/[\\/]/).pop();
         await downloadArtifact(this.evalTaskId, row.path, filename);
       } catch (e) {
-        this.$message.error(e?.response?.data?.message || e?.message || "下载失败");
+        this.$message.error(resolveApiErrorMessage(e) || this.$t("eval.artifacts.preview.downloadFailed"));
       }
     },
     handleCopy(row) {
@@ -228,7 +254,7 @@ export default {
       } else {
         fallback();
       }
-      this.$message.success("路径已复制");
+      this.$message.success(this.$t("common.messages.copySuccess"));
     },
     formatSize(bytes) {
       if (!bytes && bytes !== 0) return "—";

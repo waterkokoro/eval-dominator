@@ -1,12 +1,12 @@
 <template>
   <div class="eval-submit">
     <PageHeader
-      title="提交评测"
-      description="配置模型、数据集与运行参数后创建评测任务"
+      :title="$t('eval.submit.title')"
+      :description="$t('eval.submit.description')"
     >
       <template #actions>
         <el-button @click="$router.push({ name: 'eval-task-list' })">
-          返回任务列表
+          {{ $t("eval.submit.back") }}
         </el-button>
       </template>
     </PageHeader>
@@ -21,15 +21,15 @@
       <el-card shadow="never" class="section-card">
         <div slot="header" class="section-title">
           <i class="el-icon-document" />
-          <span>任务信息</span>
+          <span>{{ $t("eval.submit.section.task") }}</span>
         </div>
-        <el-form-item label="任务名称">
+        <el-form-item :label="$t('eval.submit.task.name')">
           <el-input
             v-model="form.taskName"
             maxlength="200"
             show-word-limit
             clearable
-            placeholder="可选，用于列表搜索与识别；不填则仅显示短任务 ID"
+            :placeholder="$t('eval.submit.task.namePlaceholder')"
           />
         </el-form-item>
       </el-card>
@@ -37,43 +37,43 @@
       <el-card shadow="never" class="section-card">
         <div slot="header" class="section-title">
           <i class="el-icon-cpu" />
-          <span>模型配置</span>
+          <span>{{ $t("eval.submit.section.model") }}</span>
         </div>
-        <el-form-item label="模型来源">
+        <el-form-item :label="$t('eval.submit.model.source')">
           <div class="model-source-row">
             <el-radio-group v-model="form.evalModelKind" @change="onEvalModelKindChange">
               <el-radio label="api">
-                API 模型
-                <span class="model-source-desc">（OpenAI 兼容远程接口）</span>
+                {{ $t("eval.submit.model.kindApi") }}
+                <span class="model-source-desc">{{ $t("eval.submit.model.kindApiDesc") }}</span>
               </el-radio>
               <el-radio label="local" disabled class="model-source-disabled">
-                本地模型
-                <span class="model-source-desc">（本机 HuggingFace 权重）</span>
-                <el-tooltip content="需直接加载本地权重与 logits，正在开发中" placement="top">
+                {{ $t("eval.submit.model.kindLocal") }}
+                <span class="model-source-desc">{{ $t("eval.submit.model.kindLocalDesc") }}</span>
+                <el-tooltip :content="$t('eval.submit.model.kindLocalTip')" placement="top">
                   <i class="el-icon-question model-source-tip-icon" />
                 </el-tooltip>
               </el-radio>
             </el-radio-group>
           </div>
           <p class="form-hint model-source-hint">
-            API 模型仅展示与其兼容的评测数据集（一般为 GEN 生成式）；本地模型上线后将支持 PPL 等需 logits 的数据集。
+            {{ $t("eval.submit.model.sourceHint") }}
           </p>
         </el-form-item>
-        <el-form-item label="选择方式">
+        <el-form-item :label="$t('eval.submit.model.mode')">
           <el-radio-group v-model="form.modelMode">
-            <el-radio-button label="manual">手动填写</el-radio-button>
+            <el-radio-button label="manual">{{ $t("eval.submit.model.modeManual") }}</el-radio-button>
             <el-radio-button label="preset" :disabled="!modelPresets.length">
-              使用预设模型
+              {{ $t("eval.submit.model.modePreset") }}
             </el-radio-button>
           </el-radio-group>
         </el-form-item>
 
         <template v-if="form.modelMode === 'preset'">
-          <el-form-item label="预设模型" prop="modelPresetId">
+          <el-form-item :label="$t('eval.submit.model.preset')" prop="modelPresetId">
             <el-select
               v-model="form.modelPresetId"
               filterable
-              placeholder="选择已保存的模型预设"
+              :placeholder="$t('eval.submit.model.presetPlaceholder')"
               style="width: 100%"
               @change="onModelPresetChange"
             >
@@ -93,67 +93,77 @@
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item v-if="selectedPreset" label="预设详情">
+          <el-form-item v-if="selectedPreset" :label="$t('eval.submit.model.presetDetail')">
             <el-descriptions :column="1" size="small" border>
-              <el-descriptions-item label="模型名称">{{ selectedPreset.modelName }}</el-descriptions-item>
-              <el-descriptions-item label="服务商">{{ selectedPreset.provider }}</el-descriptions-item>
-              <el-descriptions-item label="Base URL">{{ selectedPreset.baseUrl || "-" }}</el-descriptions-item>
-              <el-descriptions-item v-if="selectedPreset.version" label="版本">{{ selectedPreset.version }}</el-descriptions-item>
-              <el-descriptions-item label="API Key">{{ selectedPreset.maskedKey }}</el-descriptions-item>
+              <el-descriptions-item :label="$t('eval.submit.model.presetFields.modelName')">
+                {{ selectedPreset.modelName }}
+              </el-descriptions-item>
+              <el-descriptions-item :label="$t('eval.submit.model.presetFields.provider')">
+                {{ selectedPreset.provider }}
+              </el-descriptions-item>
+              <el-descriptions-item :label="$t('eval.submit.model.presetFields.baseUrl')">
+                {{ selectedPreset.baseUrl || "-" }}
+              </el-descriptions-item>
+              <el-descriptions-item v-if="selectedPreset.version" :label="$t('eval.submit.model.presetFields.version')">
+                {{ selectedPreset.version }}
+              </el-descriptions-item>
+              <el-descriptions-item :label="$t('eval.submit.model.presetFields.apiKey')">
+                {{ selectedPreset.maskedKey }}
+              </el-descriptions-item>
             </el-descriptions>
           </el-form-item>
           <el-alert
             v-if="!modelPresets.length"
             type="warning"
             :closable="false"
-            title="尚未保存任何预设模型"
-            description="请先到「模型管理」新增预设模型，或切换为手动填写。"
+            :title="$t('eval.submit.model.presetEmptyTitle')"
+            :description="$t('eval.submit.model.presetEmptyDescription')"
           />
         </template>
 
         <template v-else>
-          <el-form-item label="模型服务商" prop="provider">
+          <el-form-item :label="$t('eval.submit.model.provider')" prop="provider">
             <el-input
               v-model="form.provider"
-              placeholder="例如 openai-compatible"
+              :placeholder="$t('eval.submit.model.providerPlaceholder')"
             />
           </el-form-item>
-          <el-form-item label="模型名称" prop="modelName">
+          <el-form-item :label="$t('eval.submit.model.modelName')" prop="modelName">
             <el-input
               v-model="form.modelName"
-              placeholder="API 调用的 model 字段，例如 qwen-plus / gpt-4o-mini"
+              :placeholder="$t('eval.submit.model.modelNamePlaceholder')"
             />
           </el-form-item>
-          <el-form-item label="备注名称">
+          <el-form-item :label="$t('eval.submit.model.displayName')">
             <el-input
               v-model="form.displayName"
-              placeholder="可选。便于识别的别名"
+              :placeholder="$t('eval.submit.model.displayNamePlaceholder')"
             />
           </el-form-item>
-          <el-form-item label="自定义版本">
+          <el-form-item :label="$t('eval.submit.model.version')">
             <el-input
               v-model="form.version"
-              placeholder="可选。给同一模型测不同版本时区分"
+              :placeholder="$t('eval.submit.model.versionPlaceholder')"
             />
           </el-form-item>
-          <el-form-item label="Base URL" prop="baseUrl">
+          <el-form-item :label="$t('eval.submit.model.baseUrl')" prop="baseUrl">
             <el-input
               v-model="form.baseUrl"
-              placeholder="https://api.example.com/v1"
+              :placeholder="$t('eval.submit.model.baseUrlPlaceholder')"
             />
           </el-form-item>
-          <el-form-item label="API Key" prop="apiKey">
+          <el-form-item :label="$t('eval.submit.model.apiKey')" prop="apiKey">
             <el-input
               v-model="form.apiKey"
               type="password"
               show-password
-              placeholder="仅本次评测使用，可选择保存"
+              :placeholder="$t('eval.submit.model.apiKeyPlaceholder')"
             />
           </el-form-item>
-          <el-form-item label="保存为预设">
+          <el-form-item :label="$t('eval.submit.model.saveAsPreset')">
             <el-switch v-model="form.saveModel" />
             <span class="form-hint">
-              开启后将存入「模型管理」，下次可直接选用
+              {{ $t("eval.submit.model.saveAsPresetHint") }}
             </span>
           </el-form-item>
         </template>
@@ -162,7 +172,7 @@
       <el-card shadow="never" class="section-card">
         <div slot="header" class="section-title">
           <i class="el-icon-collection" />
-          <span>数据集</span>
+          <span>{{ $t("eval.submit.section.dataset") }}</span>
           <el-button
             type="text"
             class="section-toggle"
@@ -170,14 +180,14 @@
             :loading="datasetsLoading"
             @click="loadDatasets"
           >
-            刷新
+            {{ $t("common.actions.refresh") }}
           </el-button>
         </div>
-        <el-form-item label="选择数据集" prop="datasetId">
+        <el-form-item :label="$t('eval.submit.dataset.select')" prop="datasetId">
           <el-select
             v-model="form.datasetId"
             filterable
-            :placeholder="compatibleDatasets.length ? '从与当前模型来源匹配的数据集中选择' : '暂无匹配的数据集'"
+            :placeholder="compatibleDatasets.length ? $t('eval.submit.dataset.selectPlaceholder') : $t('eval.submit.dataset.selectPlaceholderEmpty')"
             style="width: 100%"
             :loading="datasetsLoading"
             :no-data-text="compatibleDatasetsEmptyHint"
@@ -196,18 +206,20 @@
                     {{ inferenceModeLabel(item.inferenceMode) }}
                   </el-tag>
                   <el-tag size="mini" :type="item.source === 'builtin' ? 'info' : 'warning'">
-                    {{ item.source === "builtin" ? "内置" : "自定义" }}
+                    {{ $t(`dataset.source.${item.source}`) }}
                   </el-tag>
-                  <span v-if="item.sampleCount" class="dataset-option-count">{{ item.sampleCount }} 样本</span>
+                  <span v-if="item.sampleCount" class="dataset-option-count">
+                    {{ $t("eval.submit.dataset.samples", { count: item.sampleCount }) }}
+                  </span>
                 </span>
               </div>
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item v-if="selectedDataset" label="说明">
+        <el-form-item v-if="selectedDataset" :label="$t('eval.submit.dataset.description')">
           <el-alert
             :title="selectedDataset.displayName"
-            :description="`${selectedDataset.description || '无描述'}\nCode: ${selectedDataset.code}`"
+            :description="`${selectedDataset.description || $t('eval.submit.dataset.noDescription')}\nCode: ${selectedDataset.code}`"
             type="info"
             :closable="false"
             show-icon
@@ -217,31 +229,31 @@
           <el-alert
             type="error"
             :closable="false"
-            title="该数据集与当前模型来源不兼容"
-            description="所选数据集采用 PPL（困惑度）推理方式，需要直接读取模型 logits，仅适用于本地模型。请改选 GEN 类数据集，或待「本地模型」上线后再试。"
+            :title="$t('eval.submit.dataset.incompatibleTitle')"
+            :description="$t('eval.submit.dataset.incompatibleDescription')"
             show-icon
           />
         </el-form-item>
-        <el-form-item label="附加参数">
-          <KeyValueEditor v-model="form.params" placeholder-key="key" placeholder-value="value" />
+        <el-form-item :label="$t('eval.submit.dataset.params')">
+          <KeyValueEditor v-model="form.params" :placeholder-key="$t('common.placeholders.key')" :placeholder-value="$t('common.placeholders.value')" />
         </el-form-item>
       </el-card>
 
       <el-card shadow="never" class="section-card">
         <div slot="header" class="section-title">
           <i class="el-icon-s-tools" />
-          <span>运行参数</span>
+          <span>{{ $t("eval.submit.section.runtime") }}</span>
           <el-button
             type="text"
             class="section-toggle"
             @click="runtimeOpen = !runtimeOpen"
           >
-            {{ runtimeOpen ? "收起" : "展开" }}
+            {{ runtimeOpen ? $t("common.actions.collapse") : $t("common.actions.expand") }}
             <i :class="runtimeOpen ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" />
           </el-button>
         </div>
         <div v-show="runtimeOpen">
-          <el-form-item label="超时（秒）">
+          <el-form-item :label="$t('eval.submit.runtime.timeout')">
             <el-input-number
               v-model="form.runtime.timeoutSeconds"
               :min="0"
@@ -249,7 +261,7 @@
               controls-position="right"
             />
           </el-form-item>
-          <el-form-item label="最大并发">
+          <el-form-item :label="$t('eval.submit.runtime.maxWorkers')">
             <el-input-number
               v-model="form.runtime.maxWorkers"
               :min="1"
@@ -257,14 +269,14 @@
               controls-position="right"
             />
           </el-form-item>
-          <el-form-item label="保留原始输出">
+          <el-form-item :label="$t('eval.submit.runtime.keepRawOutputs')">
             <el-switch v-model="form.runtime.keepRawOutputs" />
           </el-form-item>
         </div>
       </el-card>
 
       <div class="form-actions">
-        <el-button @click="resetForm">重置</el-button>
+        <el-button @click="resetForm">{{ $t("eval.submit.footer.reset") }}</el-button>
         <el-button
           type="primary"
           :loading="loading"
@@ -272,7 +284,7 @@
           icon="el-icon-s-promotion"
           @click="handleSubmit"
         >
-          创建评测任务
+          {{ $t("eval.submit.footer.create") }}
         </el-button>
       </div>
     </el-form>
@@ -320,18 +332,21 @@ export default {
       modelPresets: [],
       datasets: [],
       datasetsLoading: false,
-      form: buildInitialForm(),
-      rules: {
-        provider: [{ required: true, message: "请填写服务商", trigger: "blur" }],
-        modelName: [{ required: true, message: "请填写模型名称", trigger: "blur" }],
-        baseUrl: [{ required: true, message: "请填写 Base URL", trigger: "blur" }],
-        apiKey: [{ required: true, message: "请填写 API Key", trigger: "blur" }],
-        modelPresetId: [{ required: true, message: "请选择预设模型", trigger: "change" }],
-        datasetId: [{ required: true, message: "请选择数据集", trigger: "change" }]
-      }
+      form: buildInitialForm()
     };
   },
   computed: {
+    rules() {
+      const t = (k) => this.$t(`eval.submit.model.rules.${k}`);
+      return {
+        provider: [{ required: true, message: t("providerRequired"), trigger: "blur" }],
+        modelName: [{ required: true, message: t("modelNameRequired"), trigger: "blur" }],
+        baseUrl: [{ required: true, message: t("baseUrlRequired"), trigger: "blur" }],
+        apiKey: [{ required: true, message: t("apiKeyRequired"), trigger: "blur" }],
+        modelPresetId: [{ required: true, message: t("presetRequired"), trigger: "change" }],
+        datasetId: [{ required: true, message: this.$t("eval.submit.dataset.datasetRequired"), trigger: "change" }]
+      };
+    },
     selectedPreset() {
       return this.modelPresets.find((p) => p.id === this.form.modelPresetId) || null;
     },
@@ -343,12 +358,12 @@ export default {
       return this.datasets.filter((d) => this.datasetMatchesEvalModelKind(d));
     },
     compatibleDatasetsEmptyHint() {
-      if (this.datasetsLoading) return "加载中…";
-      if (!this.datasets.length) return "暂无已启用数据集，请先在「数据集」中同步或启用";
+      if (this.datasetsLoading) return this.$t("eval.submit.dataset.loading");
+      if (!this.datasets.length) return this.$t("eval.submit.dataset.emptyAll");
       if (this.form.evalModelKind === "api") {
-        return "当前无与 API 模型兼容的数据集（需 GEN 类）。可到数据集页确认推理方式或同步内置集";
+        return this.$t("eval.submit.dataset.emptyApi");
       }
-      return "暂无数据";
+      return this.$t("eval.submit.dataset.noData");
     },
     datasetIncompatible() {
       const ds = this.selectedDataset;
@@ -415,7 +430,7 @@ export default {
           this.form.datasetId = target.id;
           this.onDatasetChange(target.id);
         } else if (target && !this.datasetMatchesEvalModelKind(target)) {
-          this.$message.warning("该数据集与当前 API 模型来源不兼容，已跳过预填");
+          this.$message.warning(this.$t("eval.submit.dataset.incompatibleSkip"));
         }
       }
     },
@@ -495,7 +510,7 @@ export default {
       this.loading = true;
       try {
         const response = await createEvalTask(this.buildPayload());
-        this.$message.success("任务已创建");
+        this.$message.success(this.$t("eval.submit.footer.createSuccess"));
         this.$router.push({
           name: "eval-task-detail",
           params: { evalTaskId: response.evalTaskId }
