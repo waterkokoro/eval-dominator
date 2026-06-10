@@ -121,6 +121,21 @@
         </el-button>
       </span>
     </el-dialog>
+
+    <!-- Delete confirm dialog -->
+    <el-dialog
+      :title="$t('model.messages.deleteConfirmTitle')"
+      :visible.sync="deleteConfirm.visible"
+      width="420px"
+      :close-on-click-modal="false"
+      append-to-body
+    >
+      <p v-if="deleteConfirm.target">{{ $t('model.messages.deleteConfirm', { name: deleteConfirm.target.displayName || deleteConfirm.target.modelName }) }}</p>
+      <div slot="footer">
+        <el-button @click="deleteConfirm.visible = false">{{ $t('common.actions.cancel') }}</el-button>
+        <el-button type="danger" :loading="deleteConfirm.deleting" @click="confirmDelete">{{ $t('model.messages.deleteConfirmOk') }}</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -157,7 +172,12 @@ export default {
     return {
       loading: false,
       rows: [],
-      dialog: buildDialog()
+      dialog: buildDialog(),
+      deleteConfirm: {
+        visible: false,
+        deleting: false,
+        target: null
+      }
     };
   },
   computed: {
@@ -236,24 +256,23 @@ export default {
         this.dialog.saving = false;
       }
     },
-    async handleDelete(row) {
-      try {
-        await this.$confirm(
-          this.$t("model.messages.deleteConfirm", {
-            name: row.displayName || row.modelName
-          }),
-          this.$t("common.messages.tip"),
-          { type: "warning" }
-        );
-      } catch (e) {
-        return;
-      }
+    handleDelete(row) {
+      this.deleteConfirm.target = row;
+      this.deleteConfirm.visible = true;
+    },
+    async confirmDelete() {
+      const row = this.deleteConfirm.target;
+      if (!row) return;
+      this.deleteConfirm.deleting = true;
       try {
         await deleteModel(row.id);
-        this.$message.success(this.$t("model.messages.deleteSuccess"));
+        this.$message.success(this.$t('model.messages.deleteSuccess'));
+        this.deleteConfirm.visible = false;
         this.loadList();
       } catch (error) {
-        this.$message.error(resolveApiErrorMessage(error) || this.$t("model.messages.deleteFailed"));
+        this.$message.error(resolveApiErrorMessage(error) || this.$t('model.messages.deleteFailed'));
+      } finally {
+        this.deleteConfirm.deleting = false;
       }
     }
   }

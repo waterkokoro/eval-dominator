@@ -9,6 +9,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -39,7 +41,7 @@ type ModelRepository interface {
 type CoreClient interface {
 	ValidateEvalConfig(ctx context.Context, config *evalv1.EvalConfig) error
 	BuildEvalConfig(ctx context.Context, config *evalv1.EvalConfig) (*evalv1.BuildEvalConfigResponse, error)
-	ExecuteEval(ctx context.Context, evalTaskID string, config *evalv1.EvalConfig, configPath string, outputDir string) (*evalv1.ExecuteEvalResponse, error)
+	ExecuteEval(ctx context.Context, evalTaskID string, config *evalv1.EvalConfig, configPath string, outputDir string, reuseTimestamp string) (*evalv1.ExecuteEvalResponse, error)
 	ParseEvalResult(ctx context.Context, evalTaskID string, outputDir string) (*evalv1.EvalResult, error)
 	CancelEval(ctx context.Context, evalTaskID string) (bool, error)
 }
@@ -63,19 +65,29 @@ type EvalService struct {
 }
 
 type CreateEvalTaskInput struct {
-	TaskName       string
-	UserID         int64
-	Provider       string
-	ModelName      string
-	DisplayName    string
-	Version        string
-	BaseURL        string
-	APIKey         string
-	ModelPresetID  int64
-	DatasetType    string
-	DatasetName    string
-	SaveModel      bool
-	Params         map[string]string
+	TaskName      string
+	UserID        int64
+	Provider      string
+	ModelName     string
+	DisplayName   string
+	Version       string
+	BaseURL       string
+	APIKey        string
+	ModelPresetID int64
+	DatasetType   string
+	DatasetName   string
+	EvaluatorType string // rouge / accuracy / keyword_match / em / bleu / jieba_rouge（默认 rouge）
+	SaveModel     bool
+	Params        map[string]string
+	Runtime       RuntimeInput
+}
+
+// RuntimeInput 前端传入的运行时参数，0 值表示使用服务端默认值。
+type RuntimeInput struct {
+	TimeoutSeconds int
+	MaxWorkers     int
+	KeepRawOutputs bool
+	HasValues      bool // true 表示前端明确传入了 runtime 参数
 }
 
 func NewEvalService(taskRepo EvalTaskRepository, resultRepo EvalResultRepository, modelRepo ModelRepository, datasetRepo DatasetLookup, coreClient CoreClient, cfg config.EvalConfig) *EvalService {
@@ -224,6 +236,177 @@ func (s *EvalService) CancelTask(ctx context.Context, evalTaskID string, userID 
 	return nil
 }
 
+// runDirPattern 匹配 OpenCompass 0.5.x 的运行目录命名 <YYYYMMDD_HHMMSS>。
+var runDirPattern = regexp.MustCompile(`^\d{8}_\d{6}$`)
+
+// RerunEvaluateNode 仅重跑 evaluate 节点：复用 task.OutputDir/<latest_ts>/predictions
+// 让 OpenCompass 通过 -r 跳过推理，仅重新生成 results / summary。
+//
+// 校验：
+//  1. 任务存在且属于当前用户
+//  2. 必须处于终态（succeeded / failed / cancelled / timeout）
+//  3. task.OutputDir 非空且实际存在
+//  4. OutputDir 下存在 build 阶段生成的 opencompass_eval_config.py
+//  5. OutputDir 下能找到最新的 <YYYYMMDD_HHMMSS> 运行子目录
+//  6. 该子目录下 predictions/ 存在并至少有一份 *.json 预测文件
+//  7. 任务当前不在 in-flight rerun 中（依赖 DB 状态机：上面 1/2 已经把这条限制收敛到终态）
+//
+// 校验通过后异步执行 ExecuteEval(reuseTimestamp=ts) → ParseEvalResult → saveResult。
+func (s *EvalService) RerunEvaluateNode(ctx context.Context, evalTaskID string, userID int64) error {
+	task, err := s.taskRepo.GetByID(ctx, evalTaskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return fmt.Errorf("任务不存在")
+	}
+	if userID > 0 && task.UserID != userID {
+		return fmt.Errorf("任务不存在")
+	}
+	if !task.Status.IsTerminal() {
+		return fmt.Errorf("任务尚未结束（status=%s），不能仅重跑评测节点", task.Status)
+	}
+	if strings.TrimSpace(task.OutputDir) == "" {
+		return fmt.Errorf("任务缺少输出目录，无法复用 predictions 重跑评测")
+	}
+	if st, err := os.Stat(task.OutputDir); err != nil || !st.IsDir() {
+		return fmt.Errorf("任务输出目录不存在或已被清理: %s", task.OutputDir)
+	}
+
+	configPath := filepath.Join(task.OutputDir, "opencompass_eval_config.py")
+	if _, err := os.Stat(configPath); err != nil {
+		return fmt.Errorf("缺少 build 阶段产物 opencompass_eval_config.py，无法重跑评测")
+	}
+
+	runTimestamp, err := pickLatestRunDir(task.OutputDir)
+	if err != nil {
+		return err
+	}
+	predictionsDir := filepath.Join(task.OutputDir, runTimestamp, "predictions")
+	hasPredictions, err := hasPredictionFile(predictionsDir)
+	if err != nil {
+		return fmt.Errorf("检查 predictions 失败: %w", err)
+	}
+	if !hasPredictions {
+		return fmt.Errorf("未找到可复用的预测结果（%s 下没有 *.json），请整体重跑任务", predictionsDir)
+	}
+
+	// 立刻把状态切回 running，避免前端反复点击；后续异步跑 ExecuteEval。
+	// 注意：UpdateStatus 第三个参数为空串时部分实现可能会清空 OutputDir，所以仍传原值。
+	if err := s.updateStatus(ctx, task.ID, domain.EvalTaskStatusRunning, task.OutputDir, "", ""); err != nil {
+		return fmt.Errorf("更新任务状态失败: %w", err)
+	}
+
+	taskCopy := *task
+	go s.executeRerunEvaluate(context.Background(), taskCopy, configPath, runTimestamp)
+	return nil
+}
+
+// executeRerunEvaluate 异步执行 evaluate 节点重跑流程，沿用 executeTask 后半段的状态机。
+func (s *EvalService) executeRerunEvaluate(ctx context.Context, task domain.EvalTask, configPath string, reuseTimestamp string) {
+	// reuse 模式下 Core 不会重新生成 mmengine 配置、不会调用 LLM，
+	// 所以 EvalConfig 用最小占位即可：只填 runtime 必需字段和 eval_task_id。
+	evalConfig := &evalv1.EvalConfig{
+		Model:   &evalv1.ModelConfig{Type: evalv1.ModelType_MODEL_TYPE_REMOTE_API},
+		Dataset: &evalv1.DatasetConfig{},
+		Runtime: &evalv1.RuntimeConfig{
+			WorkDir:        s.config.OutputDir,
+			TimeoutSeconds: int32(s.config.DefaultTimeoutSecs),
+			MaxWorkers:     1,
+			KeepRawOutputs: true,
+		},
+		ExtraParams: map[string]string{"eval_task_id": task.ID},
+	}
+
+	executeResp, err := s.coreClient.ExecuteEval(ctx, task.ID, evalConfig, configPath, task.OutputDir, reuseTimestamp)
+	if err != nil {
+		if s.consumeCancelled(task.ID) {
+			log.Printf("evaluate 重跑被用户终止 task=%s: %v", task.ID, err)
+			return
+		}
+		s.failTask(ctx, task.ID, "RERUN_EVAL_FAILED", err)
+		return
+	}
+	if s.consumeCancelled(task.ID) {
+		log.Printf("evaluate 重跑被用户终止 task=%s（ExecuteEval 已退出）", task.ID)
+		return
+	}
+
+	if err := s.updateStatus(ctx, task.ID, domain.EvalTaskStatusParsing, executeResp.GetOutputDir(), "", ""); err != nil {
+		log.Printf("更新任务状态失败: %v", err)
+		return
+	}
+	result, err := s.coreClient.ParseEvalResult(ctx, task.ID, executeResp.GetOutputDir())
+	if err != nil {
+		s.failTask(ctx, task.ID, "PARSE_FAILED", err)
+		return
+	}
+	if err := s.saveResult(ctx, task.ID, result); err != nil {
+		s.failTask(ctx, task.ID, "SAVE_RESULT_FAILED", err)
+		return
+	}
+	if reason := failureReason(result); reason != "" {
+		if updateErr := s.taskRepo.UpdateStatus(ctx, task.ID, domain.EvalTaskStatusFailed, executeResp.GetOutputDir(), "NO_VALID_METRIC", reason); updateErr != nil {
+			log.Printf("更新任务状态失败: %v", updateErr)
+		}
+		return
+	}
+	if err := s.updateStatus(ctx, task.ID, domain.EvalTaskStatusSucceeded, executeResp.GetOutputDir(), "", ""); err != nil {
+		log.Printf("更新任务状态失败: %v", err)
+	}
+}
+
+// pickLatestRunDir 在 outputDir 下查找形如 YYYYMMDD_HHMMSS 的最新运行子目录。
+func pickLatestRunDir(outputDir string) (string, error) {
+	entries, err := os.ReadDir(outputDir)
+	if err != nil {
+		return "", fmt.Errorf("读取输出目录失败: %w", err)
+	}
+	latest := ""
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !runDirPattern.MatchString(name) {
+			continue
+		}
+		if name > latest {
+			latest = name
+		}
+	}
+	if latest == "" {
+		return "", fmt.Errorf("未在 %s 下找到 OpenCompass 运行目录（YYYYMMDD_HHMMSS）", outputDir)
+	}
+	return latest, nil
+}
+
+// hasPredictionFile 检查目录下是否至少有一份 *.json 预测文件（递归）。
+func hasPredictionFile(dir string) (bool, error) {
+	st, err := os.Stat(dir)
+	if err != nil || !st.IsDir() {
+		return false, nil
+	}
+	found := false
+	walkErr := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(strings.ToLower(info.Name()), ".json") {
+			found = true
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	if walkErr != nil && walkErr != filepath.SkipAll {
+		return found, walkErr
+	}
+	return found, nil
+}
+
 func (s *EvalService) markCancelled(evalTaskID string) {
 	s.cancelMu.Lock()
 	defer s.cancelMu.Unlock()
@@ -254,16 +437,16 @@ const (
 )
 
 var textArtifactExt = map[string]struct{}{
-	".log":  {},
-	".out":  {},
-	".txt":  {},
-	".md":   {},
-	".csv":  {},
-	".json": {},
+	".log":   {},
+	".out":   {},
+	".txt":   {},
+	".md":    {},
+	".csv":   {},
+	".json":  {},
 	".jsonl": {},
-	".yaml": {},
-	".yml":  {},
-	".py":   {},
+	".yaml":  {},
+	".yml":   {},
+	".py":    {},
 }
 
 // ResolveArtifactFile 校验路径合法（必须落在 OutputDir 下）后返回文件元信息。
@@ -361,23 +544,148 @@ func (s *EvalService) PreviewArtifactFile(ctx context.Context, evalTaskID string
 	return file, string(buf[:n]), truncated, nil
 }
 
-// GetTaskLog 读取指定任务最近 tail 行日志，找不到则返回空。
-func (s *EvalService) GetTaskLog(ctx context.Context, evalTaskID string, tail int) (string, error) {
+// LogFileMeta 描述一个可供前端查看的日志文件元信息。
+type LogFileMeta struct {
+	ID          string `json:"id"`          // 唯一标识（基于路径 hash 或类型+名字）
+	DisplayName string `json:"displayName"` // 展示名（如 "推理: piqa"）
+	Type        string `json:"type"`        // main / infer / eval / system
+	Path        string `json:"path"`        // 绝对路径（仅后端使用，可选返回）
+	ModTime     int64  `json:"mtime"`       // mtime 毫秒
+	Size        int64  `json:"size"`
+}
+
+// GetTaskLog 读取指定任务的日志内容。
+// 当 logID 非空时，按 logID 解析对应日志文件；为空则按"最近更新"的日志兜底。
+func (s *EvalService) GetTaskLog(ctx context.Context, evalTaskID string, logID string, tail int) (string, error) {
 	if tail <= 0 {
 		tail = 200
 	}
 
-	// 优先选「最近更新」的日志：任务运行中最有可读性的是子集 inferencer 的 .out（tqdm 实时刷），
-	// 其次才是任务根目录的 opencompass.log（只记几条里程碑）。
-	candidates := s.candidateLogPaths(ctx, evalTaskID)
-	if best := pickFreshestExisting(candidates); best != "" {
-		data, err := os.ReadFile(best)
-		if err != nil {
-			return "", fmt.Errorf("读取日志失败: %w", err)
+	target := ""
+	if logID != "" {
+		// 通过 logID 反查具体文件路径
+		logs := s.ListTaskLogs(ctx, evalTaskID)
+		for _, lg := range logs {
+			if lg.ID == logID {
+				target = lg.Path
+				break
+			}
 		}
-		return tailLines(string(data), tail), nil
 	}
-	return "", nil
+	if target == "" {
+		// 兜底：选最近更新的日志（保持旧行为）
+		candidates := s.candidateLogPaths(ctx, evalTaskID)
+		target = pickFreshestExisting(candidates)
+	}
+	if target == "" {
+		return "", nil
+	}
+	data, err := os.ReadFile(target)
+	if err != nil {
+		return "", fmt.Errorf("读取日志失败: %w", err)
+	}
+	return tailLines(string(data), tail), nil
+}
+
+// ListTaskLogs 列举该任务所有可用的日志文件，按类型分组、按 mtime 倒序。
+// 类型：main（任务主日志）/ infer（推理子任务）/ eval（评测子任务）/ system（core / backend）。
+func (s *EvalService) ListTaskLogs(ctx context.Context, evalTaskID string) []LogFileMeta {
+	out := make([]LogFileMeta, 0, 16)
+	seen := map[string]struct{}{}
+
+	add := func(meta LogFileMeta) {
+		if meta.Path == "" {
+			return
+		}
+		if _, ok := seen[meta.Path]; ok {
+			return
+		}
+		st, err := os.Stat(meta.Path)
+		if err != nil || st.IsDir() {
+			return
+		}
+		seen[meta.Path] = struct{}{}
+		meta.ModTime = st.ModTime().UnixMilli()
+		meta.Size = st.Size()
+		if meta.ID == "" {
+			meta.ID = makeLogID(meta.Type, meta.Path)
+		}
+		out = append(out, meta)
+	}
+
+	root := s.config.OutputDir
+	taskRoot := ""
+	if root != "" {
+		taskRoot = filepath.Join(root, evalTaskID)
+		add(LogFileMeta{
+			Type:        "main",
+			Path:        filepath.Join(taskRoot, "opencompass.log"),
+			DisplayName: "opencompass.log",
+		})
+		base := filepath.Dir(root)
+		add(LogFileMeta{
+			Type:        "system",
+			Path:        filepath.Join(base, "logs", "core", evalTaskID+".log"),
+			DisplayName: "core",
+		})
+		add(LogFileMeta{
+			Type:        "system",
+			Path:        filepath.Join(base, "logs", "backend", evalTaskID+".log"),
+			DisplayName: "backend",
+		})
+	}
+
+	// DB 兜底
+	if task, err := s.taskRepo.GetByID(ctx, evalTaskID); err == nil && task != nil && task.OutputDir != "" {
+		add(LogFileMeta{
+			Type:        "main",
+			Path:        filepath.Join(task.OutputDir, "opencompass.log"),
+			DisplayName: "opencompass.log",
+		})
+		if taskRoot == "" {
+			taskRoot = task.OutputDir
+		}
+	}
+
+	// 子任务日志：<task_root>/<timestamp>/logs/{infer,eval}/<model>/<dataset>.out
+	if taskRoot != "" {
+		matches, _ := filepath.Glob(filepath.Join(taskRoot, "*", "logs", "infer", "*", "*.out"))
+		for _, p := range matches {
+			add(LogFileMeta{
+				Type:        "infer",
+				Path:        p,
+				DisplayName: subtaskLogDisplayName(p),
+			})
+		}
+		matches, _ = filepath.Glob(filepath.Join(taskRoot, "*", "logs", "eval", "*", "*.out"))
+		for _, p := range matches {
+			add(LogFileMeta{
+				Type:        "eval",
+				Path:        p,
+				DisplayName: subtaskLogDisplayName(p),
+			})
+		}
+	}
+
+	return out
+}
+
+// subtaskLogDisplayName 从形如 .../logs/infer/<model>/<dataset>.out 中提取 "<dataset>"。
+func subtaskLogDisplayName(p string) string {
+	base := filepath.Base(p)
+	name := strings.TrimSuffix(base, filepath.Ext(base))
+	return name
+}
+
+// makeLogID 用 type + 路径相对最末两段做稳定 id，前端把它当作不透明字符串。
+func makeLogID(typ string, p string) string {
+	clean := strings.ReplaceAll(p, "/", "_")
+	clean = strings.ReplaceAll(clean, "\\", "_")
+	clean = strings.ReplaceAll(clean, ":", "_")
+	if len(clean) > 80 {
+		clean = clean[len(clean)-80:]
+	}
+	return typ + "-" + clean
 }
 
 func (s *EvalService) candidateLogPaths(ctx context.Context, evalTaskID string) []string {
@@ -457,6 +765,133 @@ func tailLines(content string, tail int) string {
 	return strings.Join(lines[len(lines)-tail:], "\n")
 }
 
+// tqdmProgressRe matches tqdm progress bars with current/total counts,
+// e.g. " 45%|████▍ | 62/139 [...]". Captures: percentage, current, total.
+// NOTE: Go regexp does not support negative lookahead; "Inferencing:" inner
+// bars are filtered out in code (see GetTaskProgress).
+var tqdmProgressRe = regexp.MustCompile(`(\d{1,3})%\|[^|]*\|\s*(\d+)/(\d+)`)
+
+// GetTaskProgress parses the latest tqdm progress from log files for a running task.
+// Returns the percentage (0-100), a human-readable progress text like "62/139",
+// and a runningPhase ("infer" / "eval" / "") indicating which sub-phase is most active.
+// Returns (-1, "", "") if no progress info is available.
+func (s *EvalService) GetTaskProgress(ctx context.Context, evalTaskID string) (int, string, string) {
+	task, err := s.taskRepo.GetByID(ctx, evalTaskID)
+	if err != nil || task == nil {
+		return -1, "", ""
+	}
+
+	// 即使非 running 也尝试推断 phase，便于前端在 parsing/succeeded 时也能展示对的高亮节点。
+	phase := s.detectRunningPhase(ctx, evalTaskID)
+
+	if task.Status != domain.EvalTaskStatusRunning {
+		return -1, "", phase
+	}
+
+	candidates := s.candidateLogPaths(ctx, evalTaskID)
+	best := pickFreshestExisting(candidates)
+	if best == "" {
+		return -1, "", phase
+	}
+
+	// Read last 16KB to find the latest outer tqdm line
+	data, err := readTail(best, 16384)
+	if err != nil || len(data) == 0 {
+		return -1, "", phase
+	}
+
+	// Scan lines from the end; skip inner "Inferencing:" bars to find the
+	// outer (main) progress bar first.
+	lines := strings.Split(string(data), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := lines[i]
+		if strings.Contains(line, "Inferencing:") {
+			continue
+		}
+		m := tqdmProgressRe.FindStringSubmatch(line)
+		if m == nil {
+			continue
+		}
+		pct, err := strconv.Atoi(m[1])
+		if err != nil || pct < 0 || pct > 100 {
+			continue
+		}
+		return pct, m[2] + "/" + m[3], phase
+	}
+	return -1, "", phase
+}
+
+// detectRunningPhase 通过比较 logs/infer 和 logs/eval 下 .out 的最新 mtime 判断当前正在跑哪一阶段。
+// 返回 "infer" / "eval" / ""。
+func (s *EvalService) detectRunningPhase(ctx context.Context, evalTaskID string) string {
+	root := s.config.OutputDir
+	taskRoot := ""
+	if root != "" {
+		taskRoot = filepath.Join(root, evalTaskID)
+	}
+	if taskRoot == "" {
+		if task, err := s.taskRepo.GetByID(ctx, evalTaskID); err == nil && task != nil && task.OutputDir != "" {
+			taskRoot = task.OutputDir
+		}
+	}
+	if taskRoot == "" {
+		return ""
+	}
+
+	latest := func(pattern string) time.Time {
+		matches, _ := filepath.Glob(pattern)
+		var best time.Time
+		for _, p := range matches {
+			st, err := os.Stat(p)
+			if err != nil || st.IsDir() {
+				continue
+			}
+			if st.ModTime().After(best) {
+				best = st.ModTime()
+			}
+		}
+		return best
+	}
+
+	inferAt := latest(filepath.Join(taskRoot, "*", "logs", "infer", "*", "*.out"))
+	evalAt := latest(filepath.Join(taskRoot, "*", "logs", "eval", "*", "*.out"))
+
+	if evalAt.IsZero() && inferAt.IsZero() {
+		return ""
+	}
+	if evalAt.After(inferAt) {
+		return "eval"
+	}
+	return "infer"
+}
+
+// readTail reads the last n bytes of a file.
+func readTail(path string, n int) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	stat, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	size := stat.Size()
+	if size == 0 {
+		return nil, nil
+	}
+	readN := int64(n)
+	if readN > size {
+		readN = size
+	}
+	buf := make([]byte, readN)
+	_, err = f.ReadAt(buf, size-readN)
+	if err != nil {
+		return nil, err
+	}
+	return buf, nil
+}
+
 func (s *EvalService) executeTask(ctx context.Context, task domain.EvalTask, input CreateEvalTaskInput) {
 	evalConfig := s.toCoreEvalConfig(task, input)
 
@@ -483,7 +918,7 @@ func (s *EvalService) executeTask(ctx context.Context, task domain.EvalTask, inp
 		log.Printf("更新任务状态失败: %v", err)
 		return
 	}
-	executeResp, err := s.coreClient.ExecuteEval(ctx, task.ID, evalConfig, buildResp.GetConfigPath(), buildResp.GetOutputDir())
+	executeResp, err := s.coreClient.ExecuteEval(ctx, task.ID, evalConfig, buildResp.GetConfigPath(), buildResp.GetOutputDir(), "")
 	if err != nil {
 		if s.consumeCancelled(task.ID) {
 			log.Printf("任务被用户终止 task=%s: %v", task.ID, err)
@@ -555,6 +990,52 @@ func failureReason(result *evalv1.EvalResult) string {
 }
 
 func (s *EvalService) toCoreEvalConfig(task domain.EvalTask, input CreateEvalTaskInput) *evalv1.EvalConfig {
+	datasetParams := map[string]string{}
+	datasetPath := ""
+
+	// 如果数据集来源为 huggingface 或 custom，尝试从数据库获取额外信息
+	if s.datasetRepo != nil && input.DatasetName != "" {
+		if dataset, err := s.datasetRepo.GetByCode(context.Background(), input.DatasetName); err == nil && dataset != nil {
+			// 使用数据集的 ConfigPath 作为 path（Core 端会判断是否为 .py 配置文件）
+			if dataset.ConfigPath != "" {
+				datasetPath = dataset.ConfigPath
+			}
+			if dataset.LocalPath != "" && datasetPath == "" {
+				datasetPath = dataset.LocalPath
+			}
+			if dataset.FileFormat != "" {
+				datasetParams["file_format"] = dataset.FileFormat
+			}
+
+			// 传递 evaluator_type（方案 B：内置固定选项）
+			// 当用户选择了非默认 evaluator 时，同时传递 raw_data_path 让 Core 重新生成配置
+			evaluatorType := input.EvaluatorType
+			if evaluatorType == "" {
+				evaluatorType = "rouge"
+			}
+			datasetParams["evaluator_type"] = evaluatorType
+			if evaluatorType != "rouge" && dataset.LocalPath != "" {
+				// 非默认 evaluator 时，传递原始数据文件路径，让 Core 用新 evaluator 重新生成配置
+				datasetParams["raw_data_path"] = dataset.LocalPath
+			}
+		}
+	}
+
+	// runtime 参数：优先使用前端传入的值，否则回退到服务端配置。
+	timeoutSecs := s.config.DefaultTimeoutSecs
+	if input.Runtime.TimeoutSeconds > 0 {
+		timeoutSecs = input.Runtime.TimeoutSeconds
+	}
+	maxWorkers := int32(1)
+	if input.Runtime.MaxWorkers > 0 {
+		maxWorkers = int32(input.Runtime.MaxWorkers)
+	}
+	// keepRawOutputs 默认为 true；只有前端明确传入时才使用其值。
+	keepRawOutputs := true
+	if input.Runtime.HasValues {
+		keepRawOutputs = input.Runtime.KeepRawOutputs
+	}
+
 	return &evalv1.EvalConfig{
 		Model: &evalv1.ModelConfig{
 			Type:      evalv1.ModelType_MODEL_TYPE_REMOTE_API,
@@ -567,13 +1048,14 @@ func (s *EvalService) toCoreEvalConfig(task domain.EvalTask, input CreateEvalTas
 		Dataset: &evalv1.DatasetConfig{
 			Type:   datasetTypeToProto(input.DatasetType),
 			Name:   input.DatasetName,
-			Params: map[string]string{},
+			Path:   datasetPath,
+			Params: datasetParams,
 		},
 		Runtime: &evalv1.RuntimeConfig{
 			WorkDir:        s.config.OutputDir,
-			TimeoutSeconds: int32(s.config.DefaultTimeoutSecs),
-			MaxWorkers:     1,
-			KeepRawOutputs: true,
+			TimeoutSeconds: int32(timeoutSecs),
+			MaxWorkers:     maxWorkers,
+			KeepRawOutputs: keepRawOutputs,
 		},
 		ExtraParams: map[string]string{
 			"eval_task_id": task.ID,
@@ -702,6 +1184,8 @@ func datasetTypeToProto(datasetType string) evalv1.DatasetType {
 		return evalv1.DatasetType_DATASET_TYPE_OPENCOMPASS_STANDARD
 	case "custom":
 		return evalv1.DatasetType_DATASET_TYPE_CUSTOM
+	case "huggingface":
+		return evalv1.DatasetType_DATASET_TYPE_HUGGINGFACE
 	default:
 		return evalv1.DatasetType_DATASET_TYPE_OPENCOMPASS_DEMO
 	}

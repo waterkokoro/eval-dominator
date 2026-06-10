@@ -42,7 +42,9 @@
     }
   },
   "messages": {
+    "deleteConfirmTitle": "Delete Model",
     "deleteConfirm": "Delete model \"{name}\"?",
+    "deleteConfirmOk": "Confirm Delete",
     "saveSuccess": "Saved",
     "saveFailed": "Failed to save",
     "deleteSuccess": "Deleted",

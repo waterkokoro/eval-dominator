@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	evalv1 "eval-dominator/backend/internal/infrastructure/grpc/gen"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -89,16 +90,17 @@ func (c *CoreClient) BuildEvalConfig(ctx context.Context, config *evalv1.EvalCon
 	return resp, nil
 }
 
-func (c *CoreClient) ExecuteEval(ctx context.Context, evalTaskID string, config *evalv1.EvalConfig, configPath string, outputDir string) (*evalv1.ExecuteEvalResponse, error) {
+func (c *CoreClient) ExecuteEval(ctx context.Context, evalTaskID string, config *evalv1.EvalConfig, configPath string, outputDir string, reuseTimestamp string) (*evalv1.ExecuteEvalResponse, error) {
 	callCtx, cancel := context.WithTimeout(ctx, c.config.CallTimeout())
 	defer cancel()
 
 	resp, err := c.client.ExecuteEval(callCtx, &evalv1.ExecuteEvalRequest{
-		RequestId:  "execute-eval",
-		EvalTaskId: evalTaskID,
-		Config:     config,
-		ConfigPath: configPath,
-		OutputDir:  outputDir,
+		RequestId:      "execute-eval",
+		EvalTaskId:     evalTaskID,
+		Config:         config,
+		ConfigPath:     configPath,
+		OutputDir:      outputDir,
+		ReuseTimestamp: reuseTimestamp,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("调用 Core ExecuteEval 失败: %w", err)
@@ -143,6 +145,46 @@ func (c *CoreClient) ParseEvalResult(ctx context.Context, evalTaskID string, out
 	return resp.GetResult(), nil
 }
 
+// PullHuggingFaceDataset 通过 Core 的 Python datasets 库下载 HuggingFace 数据集。
+func (c *CoreClient) PullHuggingFaceDataset(ctx context.Context, repo, subset, split, cacheDir string) (*evalv1.PullHuggingFaceDatasetResponse, error) {
+	callCtx, cancel := context.WithTimeout(ctx, c.config.CallTimeout())
+	defer cancel()
+
+	resp, err := c.client.PullHuggingFaceDataset(callCtx, &evalv1.PullHuggingFaceDatasetRequest{
+		RequestId: "pull-hf-dataset",
+		Repo:      repo,
+		Subset:    subset,
+		Split:     split,
+		CacheDir:  cacheDir,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("调用 Core PullHuggingFaceDataset 失败: %w", err)
+	}
+	if !resp.GetOk() {
+		return nil, coreError(resp.GetError())
+	}
+	return resp, nil
+}
+
+// PrepareCustomDataset 验证自定义数据集文件格式并生成 OpenCompass 配置。
+func (c *CoreClient) PrepareCustomDataset(ctx context.Context, localPath, taskType string) (*evalv1.PrepareCustomDatasetResponse, error) {
+	callCtx, cancel := context.WithTimeout(ctx, c.config.CallTimeout())
+	defer cancel()
+
+	resp, err := c.client.PrepareCustomDataset(callCtx, &evalv1.PrepareCustomDatasetRequest{
+		RequestId: "prepare-custom-dataset",
+		LocalPath: localPath,
+		TaskType:  taskType,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("调用 Core PrepareCustomDataset 失败: %w", err)
+	}
+	if !resp.GetOk() {
+		return nil, coreError(resp.GetError())
+	}
+	return resp, nil
+}
+
 func formatValidationErrors(errors []*evalv1.ValidationError) string {
 	if len(errors) == 0 {
 		return "未知错误"
@@ -169,4 +211,25 @@ func coreError(err *evalv1.CoreError) error {
 		return fmt.Errorf("%s", msg)
 	}
 	return fmt.Errorf("%s: %s", err.GetCode(), msg)
+}
+
+// DatasetCoreClientAdapter 将 CoreClient 适配为 application.DatasetCoreClient 接口。
+type DatasetCoreClientAdapter struct {
+	Client *CoreClient
+}
+
+func (a *DatasetCoreClientAdapter) PullHuggingFaceDataset(ctx context.Context, repo, subset, split, cacheDir string) (string, int, error) {
+	resp, err := a.Client.PullHuggingFaceDataset(ctx, repo, subset, split, cacheDir)
+	if err != nil {
+		return "", 0, err
+	}
+	return resp.GetLocalPath(), int(resp.GetSampleCount()), nil
+}
+
+func (a *DatasetCoreClientAdapter) PrepareCustomDataset(ctx context.Context, localPath, taskType string) (string, int, error) {
+	resp, err := a.Client.PrepareCustomDataset(ctx, localPath, taskType)
+	if err != nil {
+		return "", 0, err
+	}
+	return resp.GetConfigPath(), int(resp.GetSampleCount()), nil
 }

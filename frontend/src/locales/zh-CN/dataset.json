@@ -5,12 +5,14 @@
     "description": "集中管理可用于评测的数据集，提交评测时直接选用",
     "syncBuiltin": "同步内置数据集",
     "addCustom": "添加自定义",
+    "importHuggingFace": "从 HuggingFace 导入",
     "filters": {
       "includeDisabled": "包含禁用",
       "source": "来源",
       "all": "全部",
       "builtin": "内置",
-      "custom": "自定义"
+      "custom": "自定义",
+      "huggingface": "HuggingFace"
     },
     "columns": {
       "dataset": "数据集",
@@ -23,7 +25,8 @@
     "actions": {
       "use": "用于评测",
       "edit": "编辑",
-      "delete": "删除"
+      "delete": "删除",
+      "preview": "预览"
     },
     "inferenceMode": {
       "gen": "GEN（生成式）",
@@ -36,11 +39,13 @@
     "opencompass_demo": "OpenCompass Demo",
     "opencompass_standard": "OpenCompass 标准数据集",
     "custom": "自定义数据集",
+    "huggingface": "HuggingFace 数据集",
     "unknown": "未知数据集"
   },
   "source": {
     "builtin": "内置",
-    "custom": "自定义"
+    "custom": "自定义",
+    "huggingface": "HuggingFace"
   },
   "dialog": {
     "createTitle": "添加自定义数据集",
@@ -54,12 +59,88 @@
       "descriptionPlaceholder": "数据集说明（可选）",
       "sampleCount": "样本数",
       "type": "类型",
-      "typePlaceholder": "custom / opencompass_standard ..."
+      "typePlaceholder": "custom / opencompass_standard ...",
+      "dataSource": "数据来源",
+      "fileUpload": "文件上传",
+      "localPath": "本地路径",
+      "localPathPlaceholder": "服务器上的文件路径，例如 /data/my_dataset.csv",
+      "taskType": "任务类型",
+      "taskTypeChoice": "选择题",
+      "taskTypeQA": "开放问答",
+      "taskTypeClassification": "分类"
     },
     "rules": {
       "codeRequired": "请填写 Code",
       "displayNameRequired": "请填写显示名称"
     }
+  },
+  "huggingface": {
+    "dialogTitle": "从 HuggingFace 导入数据集",
+    "searchPlaceholder": "搜索 HuggingFace 数据集...",
+    "searchButton": "搜索",
+    "pullButton": "拉取",
+    "repullButton": "重新拉取",
+    "pulling": "拉取中...",
+    "pullSuccess": "拉取成功",
+    "pullFailed": "拉取失败",
+    "noResults": "未找到相关数据集",
+    "loadingHint": "加载中，请稍候...",
+    "resultCount": "个结果",
+    "sort": {
+      "trending": "热门趋势",
+      "downloads": "下载量",
+      "likes": "点赞数",
+      "recent": "最近更新"
+    },
+    "categories": {
+      "label": "场景分类:",
+      "all": "全部",
+      "textClassification": "文本分类",
+      "questionAnswering": "问答",
+      "textGeneration": "文本生成",
+      "summarization": "摘要",
+      "translation": "翻译",
+      "tokenClassification": "实体识别",
+      "other": "其他"
+    },
+    "columns": {
+      "name": "数据集名称",
+      "description": "描述",
+      "downloads": "下载量",
+      "likes": "点赞",
+      "actions": "操作"
+    },
+    "pullDialog": {
+      "title": "拉取数据集配置",
+      "subset": "子集 (可选)",
+      "subsetPlaceholder": "留空使用默认子集",
+      "split": "分割 (可选)",
+      "splitPlaceholder": "例如 test, train"
+    },
+    "detail": {
+      "formats": "文件格式",
+      "taskTypes": "任务类型",
+      "size": "数据集大小",
+      "files": "文件数",
+      "languages": "语言",
+      "license": "许可证",
+      "loadFailed": "详情加载失败，仍可直接拉取"
+    }
+  },
+  "demo": {
+    "title": "内置 Demo 数据集",
+    "description": "这些是系统内置的示例数据集，可用于快速测试自定义数据集评测流程",
+    "importButton": "导入并验证",
+    "importSuccess": "Demo 数据集已导入",
+    "previewButton": "预览"
+  },
+  "preview": {
+    "title": "数据集预览",
+    "format": "文件格式",
+    "total": "总行数",
+    "showing": "展示",
+    "failed": "加载预览失败",
+    "columnsTruncated": "共 {total} 列，仅展示前 {shown} 列"
   },
   "messages": {
     "syncSuccess": "同步完成：扫描 {scanned}，新增 {inserted}，更新 {updated}",
@@ -69,8 +150,14 @@
     "toggleFailed": "切换失败",
     "saveSuccess": "保存成功",
     "saveFailed": "保存失败",
+    "deleteConfirmTitle": "删除数据集",
     "deleteConfirm": "确认删除「{name}」？",
+    "deleteConfirmOk": "确定删除",
     "deleteSuccess": "已删除",
-    "deleteFailed": "删除失败"
+    "deleteFailed": "删除失败",
+    "uploadSuccess": "文件上传成功",
+    "uploadFailed": "文件上传失败",
+    "createFromPathSuccess": "创建成功",
+    "createFromPathFailed": "创建失败"
   }
 }

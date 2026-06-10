@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.1.0--mvp-blue" alt="version"/>
-  <img src="https://img.shields.io/badge/status-MVP%20%C2%B7%20iterating-orange" alt="status"/>
+  <img src="https://img.shields.io/badge/version-v0.2.0-blue" alt="version"/>
+  <img src="https://img.shields.io/badge/status-Beta-orange" alt="status"/>
   <a href="https://github.com/open-compass/opencompass"><img src="https://img.shields.io/badge/OpenCompass-0.5.2-2c3e50" alt="OpenCompass 0.5.2"/></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="license"/></a>
   <br/>
@@ -29,7 +29,7 @@
   <a href="./README.md">中文</a> · <a href="./README.en.md">English</a>
 </p>
 
-> **Status: MVP (v0.1.0-mvp), actively iterating.** Designed for single-machine, single-user usage at the moment. Not hardened for public deployment.
+> **Status: Beta (v0.2.0), actively iterating.** Designed for single-machine, single-user usage at the moment. Not hardened for public deployment.
 
 ## What it is
 
@@ -65,18 +65,32 @@ flowchart LR
       <br/><sub><b>Task list</b><br/>create · search · filter</sub>
     </td>
     <td width="33%" align="center">
-      <a href="./eval-img/en/task-detail01.png"><img src="./eval-img/en/task-detail01.png" alt="Task detail" width="100%"/></a>
-      <br/><sub><b>Task detail</b><br/>stage progress · metrics · artifacts</sub>
+      <a href="./eval-img/en/task-detail-base.png"><img src="./eval-img/en/task-detail-base.png" alt="Task detail" width="100%"/></a>
+      <br/><sub><b>Task detail</b><br/>card overview · stage progress · rerun</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/analyse.png"><img src="./eval-img/en/analyse.png" alt="Per-question analysis" width="100%"/></a>
+      <br/><sub><b>Per-question analysis</b><br/>keyword hits · score tiers</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/datasets-hf-search.png"><img src="./eval-img/en/datasets-hf-search.png" alt="HF dataset search" width="100%"/></a>
+      <br/><sub><b>HuggingFace search</b><br/>one-click pull · repull</sub>
+    </td>
+    <td width="33%" align="center">
+      <a href="./eval-img/en/datasets.png"><img src="./eval-img/en/datasets.png" alt="Dataset center" width="100%"/></a>
+      <br/><sub><b>Dataset center</b><br/>built-in · custom · HF</sub>
     </td>
     <td width="33%" align="center">
       <a href="./eval-img/en/task-detail-log.png"><img src="./eval-img/en/task-detail-log.png" alt="Live log" width="100%"/></a>
-      <br/><sub><b>Live log</b><br/>auto-tails the freshest infer subset</sub>
+      <br/><sub><b>Live log</b><br/>multi-file nav · auto-tail</sub>
     </td>
   </tr>
   <tr>
     <td width="33%" align="center">
       <a href="./eval-img/en/submit.png"><img src="./eval-img/en/submit.png" alt="Submit · model" width="100%"/></a>
-      <br/><sub><b>Submit · model</b><br/>API / local · presets</sub>
+      <br/><sub><b>Submit · model</b><br/>presets · Evaluator picker</sub>
     </td>
     <td width="33%" align="center">
       <a href="./eval-img/en/submit02.png"><img src="./eval-img/en/submit02.png" alt="Submit · dataset" width="100%"/></a>
@@ -89,17 +103,43 @@ flowchart LR
   </tr>
 </table>
 
-## What works (MVP)
+## v0.2.0 Highlights
 
-- ✅ Username + password (bcrypt) + JWT login; a default account `admin / admin123` is seeded on first start — change it via `POST /auth/change-password` immediately
+### One-Click HuggingFace Dataset Import
+Search HuggingFace datasets directly from the Dataset Center, filter by scenario category or trending popularity. Search results show real-time pull status (pulled / not pulled) with one-click pull and repull buttons. Pulled datasets are auto-registered with sample count and subset info. Offline-mode safe — falls back to local cache when network is unavailable.
+
+### 6 Built-in Evaluators with Frontend Picker
+No longer limited to OpenCompass defaults — pick from ROUGE, keyword match rate, Accuracy, Exact Match (EM), BLEU, and Chinese ROUGE (jieba tokenization) via a frontend dropdown. The evaluator type is passed through the backend and dynamically injected as a template on the Core side. Fully backward-compatible. Especially useful for Agent tool-calling evaluation with the keyword match evaluator.
+
+### Per-Question Deep Analysis
+A new "Detailed Analysis" tab appears after task completion: automatically parses every sample's prompt, model output, and reference answer, scores by keyword hit rate and classifies into four tiers (call failed / low score / marginally passed / pass), with a "hide passed" filter to quickly surface weak spots. Each sample is expandable to show full input/output and hit/missed keywords.
+
+### Evaluation-Node-Only Rerun
+No need to re-invoke the LLM — the "Rerun Evaluation Summary" feature reuses existing prediction artifacts and only re-runs the evaluate stage. Swap evaluators or tweak parameters to get fresh results fast, without burning API credits.
+
+### Precise Progress Parsing from Nested tqdm Logs
+Extracts the outermost tqdm main progress bar from OpenCompass's deeply nested log output, displaying actual completed question counts (e.g. `61/139`) instead of the old erratic percentage jumps (0% → 25% → 75% → 100%).
+
+### Card-Based Task Detail Overview
+The overview tab has been redesigned with a card-based layout — task info, model configuration, dataset, and timeline are presented in four clean sections. The top five-stage progress bar (Ready → Build → Inference → Evaluation → Completed) gives an at-a-glance view of the entire pipeline.
+
+## Full Feature List
+
+- ✅ Username + password (bcrypt) + JWT login; default account `admin / admin123` seeded on first start
 - ✅ Evaluation against any OpenAI-compatible remote API (DashScope / OpenAI / DeepSeek / self-hosted vLLM …)
 - ✅ Saved model presets, with masked API key on display
-- ✅ Dataset center: auto-syncs OpenCompass demos (`demo_gsm8k`, `demo_math`, `demo_cmmlu`, …), tags `gen` / `ppl` and blocks incompatible combos
+- ✅ Dataset center: built-in demo auto-sync + HuggingFace search & pull + custom JSONL import
+- ✅ Dataset preview: JSONL / CSV in-browser preview, wide-dataset column truncation with warnings
+- ✅ 6 built-in evaluator types (ROUGE / keyword match / Accuracy / EM / BLEU / Chinese ROUGE)
 - ✅ Task list: search by name/ID, filter by date range / status / dataset
-- ✅ Task detail: stage progress, metrics with auto percent rendering, artifact preview & download, live log that always tails the freshest infer log
+- ✅ Task detail: card-based overview, five-stage progress bar, metrics with auto percent rendering, artifact preview & download
+- ✅ Per-question analysis: keyword hit/miss visualization, four-tier scoring, quick weak-spot identification
+- ✅ Evaluation-node-only rerun: reuses predictions, re-evaluates only
+- ✅ Precise progress display: actual question counts (`61/139`), no more percentage jumps
+- ✅ Live log: multi-file navigation, auto-tails the freshest infer log
 - ✅ Cancel a task (SIGTERM/SIGKILL on the whole OpenCompass process group)
-- ✅ Frontend i18n (中文 / English): vue-i18n + ElementUI locale; all strings live under `frontend/src/locales/{zh-CN,en-US}/*.json`. Adding a new locale is one entry in the registry.
-- 🚧 Eval roles & templates (multi-model + judge orchestration; design in [`md/评测角色与模板规划-2026-04-27-v1.md`](./md/评测角色与模板规划-2026-04-27-v1.md))
+- ✅ Frontend i18n (中文 / English)
+- 🚧 Eval roles & templates (multi-model + judge orchestration; design in progress)
 - 🚧 Local HuggingFace models + PPL datasets
 - 🚧 Real user system, RBAC, multi-tenant
 
@@ -107,7 +147,7 @@ flowchart LR
 
 `opencompass==0.5.2`, installed inside `core/.venv` so it never collides with your system Python.
 
-> The integration surface is intentionally small: we generate an mmengine `.py` config that OpenCompass consumes, run its CLI as a subprocess, then parse `summary/*.csv` for metrics. Bumping OpenCompass within the 0.5.x line should be a drop-in. If upstream changes how demo dataset variables are exposed, you may need to tweak the two regexes in `core/src/opencompass_core/adapter/opencompass_adapter.py`.
+> The integration surface is intentionally small: we generate an mmengine `.py` config that OpenCompass consumes, run its CLI as a subprocess, then parse `summary/*.csv` for metrics. Bumping OpenCompass within the 0.5.x line should be a drop-in.
 
 ## Quick Start
 
@@ -149,7 +189,15 @@ This creates `core/.venv` and installs OpenCompass 0.5.2 plus runtime deps. Firs
 
 It will `go install` `buf` / `protoc-gen-go` / `protoc-gen-go-grpc` if missing, and use the venv's `grpcio-tools` for the Python side.
 
-### 4. Three terminals
+### 4. One-command startup
+
+```bash
+./scripts/start.sh
+```
+
+This launches Core (gRPC :50051) → Backend (HTTP :8080) → Frontend (Vue dev server) in dependency order, waits for readiness, and prints access URLs.
+
+Or start each service separately:
 
 ```bash
 # Terminal 1
@@ -162,24 +210,15 @@ It will `go install` `buf` / `protoc-gen-go` / `protoc-gen-go-grpc` if missing, 
 ./scripts/start_frontend.sh    # Vue dev server :8081/8080
 ```
 
-Open the frontend URL and log in with the seeded account **`admin / admin123`**. Change it right after the first login:
-
-```bash
-curl -X POST http://127.0.0.1:8080/api/auth/change-password \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"oldPassword":"admin123","newPassword":"<your new password>"}'
-```
-
-Existing accounts are never overwritten on restart, so editing `auth.default_admin_password` in `config.yaml` only affects fresh databases.
+Open the frontend URL and log in with the seeded account **`admin / admin123`**.
 
 ### 5. Run your first evaluation
 
 1. **Models** → add a preset. Example: DashScope `qwen-plus`, base URL `https://dashscope.aliyuncs.com/compatible-mode/v1`, paste your `sk-...` API key.
-2. **Datasets** lists every OpenCompass demo found locally. Start with **`demo_gsm8k_chat_gen`** (only 4 prompts, ~30 seconds). Avoid `demo_cmmlu_chat_gen` for the first run — it expands into 67 subjects (~30 minutes).
-3. **Submit Eval** → pick the preset model + dataset → create.
+2. **Datasets** lists every OpenCompass demo found locally. Start with **`demo_gsm8k_chat_gen`** (only 4 prompts, ~30 seconds). You can also search and import datasets from HuggingFace.
+3. **Submit Eval** → pick the preset model + dataset + evaluator type → create.
 
-The detail page surfaces: stage progress bar, live log (auto-tailing the freshest infer subset), metric table (with auto percent detection and bar rendering), and artifact preview/download.
+The detail page surfaces: card-based overview, five-stage progress bar, live log, metric table, per-question analysis, and artifact preview/download.
 
 ## Project layout
 
@@ -198,7 +237,7 @@ The detail page surfaces: stage progress bar, live log (auto-tailing the freshes
 ├── proto/                # gRPC contract
 ├── runtime/              # Local SQLite + eval artifacts (gitignored)
 ├── md/                   # Chinese design docs (arch / steps / specs / role plan)
-├── scripts/              # Bootstrap / start / generate proto
+├── scripts/              # Bootstrap / start / generate proto / version management
 └── deploy/               # Local deployment notes
 ```
 
@@ -215,7 +254,7 @@ The detail page surfaces: stage progress bar, live log (auto-tailing the freshes
 
 ## Runtime gotchas worth knowing (already baked into the start scripts)
 
-- `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1`: keeps OpenCompass from probing huggingface.co for the remote model name (it is not a real HF repo). Without this, every subset eats a 50 s HF rate-limit retry.
+- `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1`: keeps OpenCompass from probing huggingface.co for the remote model name (it is not a real HF repo). Without this, every subset eats a 50 s HF rate-limit retry. Temporarily lifted when pulling HuggingFace datasets.
 - `GRPC_ENABLE_FORK_SUPPORT=0` / `GRPC_VERBOSITY=error`: Core is a gRPC server; subprocess fork+exec for OpenCompass with fork-support enabled aborts the child on macOS.
 - DashScope's OpenAI-compatible mode strictly requires `temperature` to be a float, so the generated `OpenAISDK` config defaults to `temperature=0.0`. Override it via the task's `params` map if needed.
 - Defaults for the OpenAISDK block: `query_per_second=5`, `max_workers=8`. Reasonable for most OpenAI-compatible vendors.
@@ -227,13 +266,12 @@ The detail page surfaces: stage progress bar, live log (auto-tailing the freshes
 - ⚠️ API keys are stored in plaintext in SQLite; only the masked form is returned to the UI.
 - ⚠️ Artifact preview/download endpoints validate that paths sit under `runtime/`, but the backend is still meant for localhost.
 
-## Roadmap (rough)
+## Roadmap
 
 - [ ] Self-service user registration, multi-tenant
 - [ ] Eval roles / templates (see plan doc)
 - [ ] Local HuggingFace models + PPL datasets
 - [ ] Concurrent task scheduling
-- [ ] Multi-user + workspace isolation
 
 ## Acknowledgements & Citation
 

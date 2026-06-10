@@ -57,6 +57,7 @@ func main() {
 	modelService := application.NewModelService(modelRepo)
 	systemService := application.NewSystemService(coreClient)
 	datasetService := application.NewDatasetService(datasetRepo, cfg.Dataset)
+	datasetService.SetCoreClient(&coreclient.DatasetCoreClientAdapter{Client: coreClient})
 	datasetService.SyncOnStartup(context.Background())
 
 	router := server.NewRouter(server.Services{

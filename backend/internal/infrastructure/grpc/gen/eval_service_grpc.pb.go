@@ -19,12 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	EvalService_HealthCheck_FullMethodName        = "/eval.v1.EvalService/HealthCheck"
-	EvalService_ValidateEvalConfig_FullMethodName = "/eval.v1.EvalService/ValidateEvalConfig"
-	EvalService_BuildEvalConfig_FullMethodName    = "/eval.v1.EvalService/BuildEvalConfig"
-	EvalService_ExecuteEval_FullMethodName        = "/eval.v1.EvalService/ExecuteEval"
-	EvalService_ParseEvalResult_FullMethodName    = "/eval.v1.EvalService/ParseEvalResult"
-	EvalService_CancelEval_FullMethodName         = "/eval.v1.EvalService/CancelEval"
+	EvalService_HealthCheck_FullMethodName            = "/eval.v1.EvalService/HealthCheck"
+	EvalService_ValidateEvalConfig_FullMethodName     = "/eval.v1.EvalService/ValidateEvalConfig"
+	EvalService_BuildEvalConfig_FullMethodName        = "/eval.v1.EvalService/BuildEvalConfig"
+	EvalService_ExecuteEval_FullMethodName            = "/eval.v1.EvalService/ExecuteEval"
+	EvalService_ParseEvalResult_FullMethodName        = "/eval.v1.EvalService/ParseEvalResult"
+	EvalService_CancelEval_FullMethodName             = "/eval.v1.EvalService/CancelEval"
+	EvalService_PullHuggingFaceDataset_FullMethodName = "/eval.v1.EvalService/PullHuggingFaceDataset"
+	EvalService_PrepareCustomDataset_FullMethodName   = "/eval.v1.EvalService/PrepareCustomDataset"
 )
 
 // EvalServiceClient is the client API for EvalService service.
@@ -45,6 +47,10 @@ type EvalServiceClient interface {
 	ParseEvalResult(ctx context.Context, in *ParseEvalResultRequest, opts ...grpc.CallOption) (*ParseEvalResultResponse, error)
 	// CancelEval 终止指定任务正在运行的 OpenCompass 子进程组。
 	CancelEval(ctx context.Context, in *CancelEvalRequest, opts ...grpc.CallOption) (*CancelEvalResponse, error)
+	// PullHuggingFaceDataset 通过 Python datasets 库下载 HuggingFace 数据集到本地。
+	PullHuggingFaceDataset(ctx context.Context, in *PullHuggingFaceDatasetRequest, opts ...grpc.CallOption) (*PullHuggingFaceDatasetResponse, error)
+	// PrepareCustomDataset 验证自定义数据集文件格式并生成 OpenCompass 可用的配置。
+	PrepareCustomDataset(ctx context.Context, in *PrepareCustomDatasetRequest, opts ...grpc.CallOption) (*PrepareCustomDatasetResponse, error)
 }
 
 type evalServiceClient struct {
@@ -115,6 +121,26 @@ func (c *evalServiceClient) CancelEval(ctx context.Context, in *CancelEvalReques
 	return out, nil
 }
 
+func (c *evalServiceClient) PullHuggingFaceDataset(ctx context.Context, in *PullHuggingFaceDatasetRequest, opts ...grpc.CallOption) (*PullHuggingFaceDatasetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PullHuggingFaceDatasetResponse)
+	err := c.cc.Invoke(ctx, EvalService_PullHuggingFaceDataset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *evalServiceClient) PrepareCustomDataset(ctx context.Context, in *PrepareCustomDatasetRequest, opts ...grpc.CallOption) (*PrepareCustomDatasetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PrepareCustomDatasetResponse)
+	err := c.cc.Invoke(ctx, EvalService_PrepareCustomDataset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EvalServiceServer is the server API for EvalService service.
 // All implementations must embed UnimplementedEvalServiceServer
 // for forward compatibility.
@@ -133,6 +159,10 @@ type EvalServiceServer interface {
 	ParseEvalResult(context.Context, *ParseEvalResultRequest) (*ParseEvalResultResponse, error)
 	// CancelEval 终止指定任务正在运行的 OpenCompass 子进程组。
 	CancelEval(context.Context, *CancelEvalRequest) (*CancelEvalResponse, error)
+	// PullHuggingFaceDataset 通过 Python datasets 库下载 HuggingFace 数据集到本地。
+	PullHuggingFaceDataset(context.Context, *PullHuggingFaceDatasetRequest) (*PullHuggingFaceDatasetResponse, error)
+	// PrepareCustomDataset 验证自定义数据集文件格式并生成 OpenCompass 可用的配置。
+	PrepareCustomDataset(context.Context, *PrepareCustomDatasetRequest) (*PrepareCustomDatasetResponse, error)
 	mustEmbedUnimplementedEvalServiceServer()
 }
 
@@ -160,6 +190,12 @@ func (UnimplementedEvalServiceServer) ParseEvalResult(context.Context, *ParseEva
 }
 func (UnimplementedEvalServiceServer) CancelEval(context.Context, *CancelEvalRequest) (*CancelEvalResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelEval not implemented")
+}
+func (UnimplementedEvalServiceServer) PullHuggingFaceDataset(context.Context, *PullHuggingFaceDatasetRequest) (*PullHuggingFaceDatasetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PullHuggingFaceDataset not implemented")
+}
+func (UnimplementedEvalServiceServer) PrepareCustomDataset(context.Context, *PrepareCustomDatasetRequest) (*PrepareCustomDatasetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PrepareCustomDataset not implemented")
 }
 func (UnimplementedEvalServiceServer) mustEmbedUnimplementedEvalServiceServer() {}
 func (UnimplementedEvalServiceServer) testEmbeddedByValue()                     {}
@@ -290,6 +326,42 @@ func _EvalService_CancelEval_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EvalService_PullHuggingFaceDataset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PullHuggingFaceDatasetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EvalServiceServer).PullHuggingFaceDataset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EvalService_PullHuggingFaceDataset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EvalServiceServer).PullHuggingFaceDataset(ctx, req.(*PullHuggingFaceDatasetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EvalService_PrepareCustomDataset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareCustomDatasetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EvalServiceServer).PrepareCustomDataset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EvalService_PrepareCustomDataset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EvalServiceServer).PrepareCustomDataset(ctx, req.(*PrepareCustomDatasetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EvalService_ServiceDesc is the grpc.ServiceDesc for EvalService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -320,6 +392,14 @@ var EvalService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelEval",
 			Handler:    _EvalService_CancelEval_Handler,
+		},
+		{
+			MethodName: "PullHuggingFaceDataset",
+			Handler:    _EvalService_PullHuggingFaceDataset_Handler,
+		},
+		{
+			MethodName: "PrepareCustomDataset",
+			Handler:    _EvalService_PrepareCustomDataset_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -18,6 +18,9 @@ type evalTaskItem struct {
 	DatasetType   string `json:"datasetType"`
 	DatasetName   string `json:"datasetName"`
 	Status        string `json:"status"`
+	Progress      int    `json:"progress,omitempty"`     // tqdm progress percentage during running, -1 if unavailable
+	ProgressText  string `json:"progressText,omitempty"` // e.g. "62/139"
+	RunningPhase  string `json:"runningPhase,omitempty"` // "infer" / "eval" / "" — 仅 status=running 时有意义
 	OutputDir     string `json:"outputDir,omitempty"`
 	ErrorCode     string `json:"errorCode"`
 	ErrorMessage  string `json:"errorMessage"`
@@ -37,6 +40,7 @@ func toEvalTaskItem(task domain.EvalTask) evalTaskItem {
 		DatasetType:   task.DatasetType,
 		DatasetName:   task.DatasetName,
 		Status:        string(task.Status),
+		Progress:      -1,
 		OutputDir:     task.OutputDir,
 		ErrorCode:     task.ErrorCode,
 		ErrorMessage:  task.ErrorMessage,
@@ -45,6 +49,14 @@ func toEvalTaskItem(task domain.EvalTask) evalTaskItem {
 		StartedAt:     fmtTime(task.StartedAt),
 		FinishedAt:    fmtTime(task.FinishedAt),
 	}
+}
+
+func toEvalTaskItemWithProgress(task domain.EvalTask, progress int, progressText string, runningPhase string) evalTaskItem {
+	item := toEvalTaskItem(task)
+	item.Progress = progress
+	item.ProgressText = progressText
+	item.RunningPhase = runningPhase
+	return item
 }
 
 type modelItem struct {

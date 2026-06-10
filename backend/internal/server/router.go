@@ -41,7 +41,10 @@ func NewRouter(services Services) *gin.Engine {
 	protected.GET("/eval/tasks/:evalTaskId", evalHandler.GetTask)
 	protected.GET("/eval/tasks/:evalTaskId/result", evalHandler.GetResult)
 	protected.GET("/eval/tasks/:evalTaskId/log", evalHandler.GetTaskLog)
+	protected.GET("/eval/tasks/:evalTaskId/logs", evalHandler.ListTaskLogs)
 	protected.POST("/eval/tasks/:evalTaskId/cancel", evalHandler.CancelTask)
+	protected.POST("/eval/tasks/:evalTaskId/rerun-eval", evalHandler.RerunEvaluateNode)
+	protected.GET("/eval/tasks/:evalTaskId/analysis", evalHandler.GetAnalysis)
 	protected.GET("/eval/tasks/:evalTaskId/artifacts/preview", evalHandler.PreviewArtifact)
 	protected.GET("/eval/tasks/:evalTaskId/artifacts/download", evalHandler.DownloadArtifact)
 
@@ -56,6 +59,14 @@ func NewRouter(services Services) *gin.Engine {
 	protected.PATCH("/datasets/:id/enabled", datasetHandler.SetEnabled)
 	protected.DELETE("/datasets/:id", datasetHandler.Delete)
 	protected.POST("/datasets/sync", datasetHandler.Sync)
+	protected.GET("/datasets/search-huggingface", datasetHandler.SearchHuggingFace)
+	protected.GET("/datasets/huggingface-detail", datasetHandler.GetHuggingFaceDetail)
+	protected.POST("/datasets/pull-huggingface", datasetHandler.PullHuggingFace)
+	protected.POST("/datasets/upload", datasetHandler.Upload)
+	protected.POST("/datasets/custom-from-path", datasetHandler.CreateFromPath)
+	protected.GET("/datasets/demo", datasetHandler.ListDemos)
+	protected.GET("/datasets/:id/preview", datasetHandler.Preview)
+	protected.GET("/datasets/preview-by-path", datasetHandler.PreviewByPath)
 
 	protected.GET("/system/health", systemHandler.Health)
 

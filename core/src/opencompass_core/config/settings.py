@@ -18,6 +18,7 @@ class ServerSettings:
 class OpenCompassSettings:
     source_dir: Path
     dataset_dir: Path
+    dataset_cache_dir: Path
     default_dataset: str
     default_model_type: str
 
@@ -62,6 +63,7 @@ def load_settings(config_path: str | Path) -> CoreSettings:
         opencompass=OpenCompassSettings(
             source_dir=_resolve_path(base_dir, _get(raw, "opencompass.source_dir", "../resources/opencompass")),
             dataset_dir=_resolve_path(base_dir, _get(raw, "opencompass.dataset_dir", "../resources/opencompass-data")),
+            dataset_cache_dir=_resolve_path(base_dir, _get(raw, "opencompass.dataset_cache_dir", "../runtime/datasets")),
             default_dataset=str(_get(raw, "opencompass.default_dataset", "demo")),
             default_model_type=str(_get(raw, "opencompass.default_model_type", "remote_api")),
         ),

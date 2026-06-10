@@ -77,6 +77,7 @@ const (
 	DatasetType_DATASET_TYPE_OPENCOMPASS_DEMO     DatasetType = 1
 	DatasetType_DATASET_TYPE_OPENCOMPASS_STANDARD DatasetType = 2
 	DatasetType_DATASET_TYPE_CUSTOM               DatasetType = 3
+	DatasetType_DATASET_TYPE_HUGGINGFACE          DatasetType = 4
 )
 
 // Enum value maps for DatasetType.
@@ -86,12 +87,14 @@ var (
 		1: "DATASET_TYPE_OPENCOMPASS_DEMO",
 		2: "DATASET_TYPE_OPENCOMPASS_STANDARD",
 		3: "DATASET_TYPE_CUSTOM",
+		4: "DATASET_TYPE_HUGGINGFACE",
 	}
 	DatasetType_value = map[string]int32{
 		"DATASET_TYPE_UNSPECIFIED":          0,
 		"DATASET_TYPE_OPENCOMPASS_DEMO":     1,
 		"DATASET_TYPE_OPENCOMPASS_STANDARD": 2,
 		"DATASET_TYPE_CUSTOM":               3,
+		"DATASET_TYPE_HUGGINGFACE":          4,
 	}
 )
 
@@ -525,14 +528,18 @@ func (x *BuildEvalConfigResponse) GetError() *CoreError {
 }
 
 type ExecuteEvalRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	EvalTaskId    string                 `protobuf:"bytes,2,opt,name=eval_task_id,json=evalTaskId,proto3" json:"eval_task_id,omitempty"`
-	Config        *EvalConfig            `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
-	ConfigPath    string                 `protobuf:"bytes,4,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`
-	OutputDir     string                 `protobuf:"bytes,5,opt,name=output_dir,json=outputDir,proto3" json:"output_dir,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	RequestId  string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	EvalTaskId string                 `protobuf:"bytes,2,opt,name=eval_task_id,json=evalTaskId,proto3" json:"eval_task_id,omitempty"`
+	Config     *EvalConfig            `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
+	ConfigPath string                 `protobuf:"bytes,4,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`
+	OutputDir  string                 `protobuf:"bytes,5,opt,name=output_dir,json=outputDir,proto3" json:"output_dir,omitempty"`
+	// 非空时表示仅重跑评测节点：复用 output_dir/<reuse_timestamp>/ 下的
+	// predictions/，由 OpenCompass 通过 -r 参数复用，仅重新生成 results 与
+	// summary。Core 在执行前会清理该 timestamp 下的 results/ summary/ logs/eval/。
+	ReuseTimestamp string `protobuf:"bytes,6,opt,name=reuse_timestamp,json=reuseTimestamp,proto3" json:"reuse_timestamp,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ExecuteEvalRequest) Reset() {
@@ -596,6 +603,13 @@ func (x *ExecuteEvalRequest) GetConfigPath() string {
 func (x *ExecuteEvalRequest) GetOutputDir() string {
 	if x != nil {
 		return x.OutputDir
+	}
+	return ""
+}
+
+func (x *ExecuteEvalRequest) GetReuseTimestamp() string {
+	if x != nil {
+		return x.ReuseTimestamp
 	}
 	return ""
 }
@@ -1530,6 +1544,278 @@ func (x *CoreError) GetDetail() string {
 	return ""
 }
 
+type PullHuggingFaceDatasetRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	Repo          string                 `protobuf:"bytes,2,opt,name=repo,proto3" json:"repo,omitempty"`                         // HuggingFace 仓库名 e.g. "openai/gsm8k"
+	Subset        string                 `protobuf:"bytes,3,opt,name=subset,proto3" json:"subset,omitempty"`                     // 数据集子集 (可选)
+	Split         string                 `protobuf:"bytes,4,opt,name=split,proto3" json:"split,omitempty"`                       // 数据集分割 e.g. "test", "train"
+	CacheDir      string                 `protobuf:"bytes,5,opt,name=cache_dir,json=cacheDir,proto3" json:"cache_dir,omitempty"` // 本地缓存目录
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PullHuggingFaceDatasetRequest) Reset() {
+	*x = PullHuggingFaceDatasetRequest{}
+	mi := &file_eval_service_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PullHuggingFaceDatasetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PullHuggingFaceDatasetRequest) ProtoMessage() {}
+
+func (x *PullHuggingFaceDatasetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_eval_service_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PullHuggingFaceDatasetRequest.ProtoReflect.Descriptor instead.
+func (*PullHuggingFaceDatasetRequest) Descriptor() ([]byte, []int) {
+	return file_eval_service_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *PullHuggingFaceDatasetRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *PullHuggingFaceDatasetRequest) GetRepo() string {
+	if x != nil {
+		return x.Repo
+	}
+	return ""
+}
+
+func (x *PullHuggingFaceDatasetRequest) GetSubset() string {
+	if x != nil {
+		return x.Subset
+	}
+	return ""
+}
+
+func (x *PullHuggingFaceDatasetRequest) GetSplit() string {
+	if x != nil {
+		return x.Split
+	}
+	return ""
+}
+
+func (x *PullHuggingFaceDatasetRequest) GetCacheDir() string {
+	if x != nil {
+		return x.CacheDir
+	}
+	return ""
+}
+
+type PullHuggingFaceDatasetResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	LocalPath     string                 `protobuf:"bytes,2,opt,name=local_path,json=localPath,proto3" json:"local_path,omitempty"`        // 下载后的本地路径
+	SampleCount   int32                  `protobuf:"varint,3,opt,name=sample_count,json=sampleCount,proto3" json:"sample_count,omitempty"` // 样本数
+	Error         *CoreError             `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PullHuggingFaceDatasetResponse) Reset() {
+	*x = PullHuggingFaceDatasetResponse{}
+	mi := &file_eval_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PullHuggingFaceDatasetResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PullHuggingFaceDatasetResponse) ProtoMessage() {}
+
+func (x *PullHuggingFaceDatasetResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_eval_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PullHuggingFaceDatasetResponse.ProtoReflect.Descriptor instead.
+func (*PullHuggingFaceDatasetResponse) Descriptor() ([]byte, []int) {
+	return file_eval_service_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *PullHuggingFaceDatasetResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *PullHuggingFaceDatasetResponse) GetLocalPath() string {
+	if x != nil {
+		return x.LocalPath
+	}
+	return ""
+}
+
+func (x *PullHuggingFaceDatasetResponse) GetSampleCount() int32 {
+	if x != nil {
+		return x.SampleCount
+	}
+	return 0
+}
+
+func (x *PullHuggingFaceDatasetResponse) GetError() *CoreError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type PrepareCustomDatasetRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	LocalPath     string                 `protobuf:"bytes,2,opt,name=local_path,json=localPath,proto3" json:"local_path,omitempty"` // CSV/JSONL 文件路径
+	TaskType      string                 `protobuf:"bytes,3,opt,name=task_type,json=taskType,proto3" json:"task_type,omitempty"`    // choice / qa / classification
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PrepareCustomDatasetRequest) Reset() {
+	*x = PrepareCustomDatasetRequest{}
+	mi := &file_eval_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PrepareCustomDatasetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrepareCustomDatasetRequest) ProtoMessage() {}
+
+func (x *PrepareCustomDatasetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_eval_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PrepareCustomDatasetRequest.ProtoReflect.Descriptor instead.
+func (*PrepareCustomDatasetRequest) Descriptor() ([]byte, []int) {
+	return file_eval_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *PrepareCustomDatasetRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *PrepareCustomDatasetRequest) GetLocalPath() string {
+	if x != nil {
+		return x.LocalPath
+	}
+	return ""
+}
+
+func (x *PrepareCustomDatasetRequest) GetTaskType() string {
+	if x != nil {
+		return x.TaskType
+	}
+	return ""
+}
+
+type PrepareCustomDatasetResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	ConfigPath    string                 `protobuf:"bytes,2,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`     // 生成的 OpenCompass 配置路径
+	SampleCount   int32                  `protobuf:"varint,3,opt,name=sample_count,json=sampleCount,proto3" json:"sample_count,omitempty"` // 验证后的样本数
+	Error         *CoreError             `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PrepareCustomDatasetResponse) Reset() {
+	*x = PrepareCustomDatasetResponse{}
+	mi := &file_eval_service_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PrepareCustomDatasetResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrepareCustomDatasetResponse) ProtoMessage() {}
+
+func (x *PrepareCustomDatasetResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_eval_service_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PrepareCustomDatasetResponse.ProtoReflect.Descriptor instead.
+func (*PrepareCustomDatasetResponse) Descriptor() ([]byte, []int) {
+	return file_eval_service_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *PrepareCustomDatasetResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *PrepareCustomDatasetResponse) GetConfigPath() string {
+	if x != nil {
+		return x.ConfigPath
+	}
+	return ""
+}
+
+func (x *PrepareCustomDatasetResponse) GetSampleCount() int32 {
+	if x != nil {
+		return x.SampleCount
+	}
+	return 0
+}
+
+func (x *PrepareCustomDatasetResponse) GetError() *CoreError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
 var File_eval_service_proto protoreflect.FileDescriptor
 
 const file_eval_service_proto_rawDesc = "" +
@@ -1561,7 +1847,7 @@ const file_eval_service_proto_rawDesc = "" +
 	"\n" +
 	"output_dir\x18\x03 \x01(\tR\toutputDir\x12/\n" +
 	"\tartifacts\x18\x04 \x03(\v2\x11.eval.v1.ArtifactR\tartifacts\x12(\n" +
-	"\x05error\x18\x05 \x01(\v2\x12.eval.v1.CoreErrorR\x05error\"\xc2\x01\n" +
+	"\x05error\x18\x05 \x01(\v2\x12.eval.v1.CoreErrorR\x05error\"\xeb\x01\n" +
 	"\x12ExecuteEvalRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12 \n" +
@@ -1571,7 +1857,8 @@ const file_eval_service_proto_rawDesc = "" +
 	"\vconfig_path\x18\x04 \x01(\tR\n" +
 	"configPath\x12\x1d\n" +
 	"\n" +
-	"output_dir\x18\x05 \x01(\tR\toutputDir\"\x9f\x01\n" +
+	"output_dir\x18\x05 \x01(\tR\toutputDir\x12'\n" +
+	"\x0freuse_timestamp\x18\x06 \x01(\tR\x0ereuseTimestamp\"\x9f\x01\n" +
 	"\x13ExecuteEvalResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1d\n" +
 	"\n" +
@@ -1665,23 +1952,49 @@ const file_eval_service_proto_rawDesc = "" +
 	"\tCoreError\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail*[\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x9d\x01\n" +
+	"\x1dPullHuggingFaceDatasetRequest\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12\x12\n" +
+	"\x04repo\x18\x02 \x01(\tR\x04repo\x12\x16\n" +
+	"\x06subset\x18\x03 \x01(\tR\x06subset\x12\x14\n" +
+	"\x05split\x18\x04 \x01(\tR\x05split\x12\x1b\n" +
+	"\tcache_dir\x18\x05 \x01(\tR\bcacheDir\"\x9c\x01\n" +
+	"\x1ePullHuggingFaceDatasetResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1d\n" +
+	"\n" +
+	"local_path\x18\x02 \x01(\tR\tlocalPath\x12!\n" +
+	"\fsample_count\x18\x03 \x01(\x05R\vsampleCount\x12(\n" +
+	"\x05error\x18\x04 \x01(\v2\x12.eval.v1.CoreErrorR\x05error\"x\n" +
+	"\x1bPrepareCustomDatasetRequest\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12\x1d\n" +
+	"\n" +
+	"local_path\x18\x02 \x01(\tR\tlocalPath\x12\x1b\n" +
+	"\ttask_type\x18\x03 \x01(\tR\btaskType\"\x9c\x01\n" +
+	"\x1cPrepareCustomDatasetResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1f\n" +
+	"\vconfig_path\x18\x02 \x01(\tR\n" +
+	"configPath\x12!\n" +
+	"\fsample_count\x18\x03 \x01(\x05R\vsampleCount\x12(\n" +
+	"\x05error\x18\x04 \x01(\v2\x12.eval.v1.CoreErrorR\x05error*[\n" +
 	"\tModelType\x12\x1a\n" +
 	"\x16MODEL_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15MODEL_TYPE_REMOTE_API\x10\x01\x12\x17\n" +
-	"\x13MODEL_TYPE_LOCAL_HF\x10\x02*\x8e\x01\n" +
+	"\x13MODEL_TYPE_LOCAL_HF\x10\x02*\xac\x01\n" +
 	"\vDatasetType\x12\x1c\n" +
 	"\x18DATASET_TYPE_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dDATASET_TYPE_OPENCOMPASS_DEMO\x10\x01\x12%\n" +
 	"!DATASET_TYPE_OPENCOMPASS_STANDARD\x10\x02\x12\x17\n" +
-	"\x13DATASET_TYPE_CUSTOM\x10\x03*\xaf\x01\n" +
+	"\x13DATASET_TYPE_CUSTOM\x10\x03\x12\x1c\n" +
+	"\x18DATASET_TYPE_HUGGINGFACE\x10\x04*\xaf\x01\n" +
 	"\fArtifactType\x12\x1d\n" +
 	"\x19ARTIFACT_TYPE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ARTIFACT_TYPE_CONFIG\x10\x01\x12\x1c\n" +
 	"\x18ARTIFACT_TYPE_RAW_RESULT\x10\x02\x12\x18\n" +
 	"\x14ARTIFACT_TYPE_REPORT\x10\x03\x12\x15\n" +
 	"\x11ARTIFACT_TYPE_LOG\x10\x04\x12\x17\n" +
-	"\x13ARTIFACT_TYPE_OTHER\x10\x052\xf3\x03\n" +
+	"\x13ARTIFACT_TYPE_OTHER\x10\x052\xc3\x05\n" +
 	"\vEvalService\x12H\n" +
 	"\vHealthCheck\x12\x1b.eval.v1.HealthCheckRequest\x1a\x1c.eval.v1.HealthCheckResponse\x12]\n" +
 	"\x12ValidateEvalConfig\x12\".eval.v1.ValidateEvalConfigRequest\x1a#.eval.v1.ValidateEvalConfigResponse\x12T\n" +
@@ -1689,7 +2002,9 @@ const file_eval_service_proto_rawDesc = "" +
 	"\vExecuteEval\x12\x1b.eval.v1.ExecuteEvalRequest\x1a\x1c.eval.v1.ExecuteEvalResponse\x12T\n" +
 	"\x0fParseEvalResult\x12\x1f.eval.v1.ParseEvalResultRequest\x1a .eval.v1.ParseEvalResultResponse\x12E\n" +
 	"\n" +
-	"CancelEval\x12\x1a.eval.v1.CancelEvalRequest\x1a\x1b.eval.v1.CancelEvalResponseBGZEeval-dominator/backend/internal/infrastructure/grpc/gen/evalv1;evalv1b\x06proto3"
+	"CancelEval\x12\x1a.eval.v1.CancelEvalRequest\x1a\x1b.eval.v1.CancelEvalResponse\x12i\n" +
+	"\x16PullHuggingFaceDataset\x12&.eval.v1.PullHuggingFaceDatasetRequest\x1a'.eval.v1.PullHuggingFaceDatasetResponse\x12c\n" +
+	"\x14PrepareCustomDataset\x12$.eval.v1.PrepareCustomDatasetRequest\x1a%.eval.v1.PrepareCustomDatasetResponseBGZEeval-dominator/backend/internal/infrastructure/grpc/gen/evalv1;evalv1b\x06proto3"
 
 var (
 	file_eval_service_proto_rawDescOnce sync.Once
@@ -1704,37 +2019,41 @@ func file_eval_service_proto_rawDescGZIP() []byte {
 }
 
 var file_eval_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_eval_service_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_eval_service_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_eval_service_proto_goTypes = []any{
-	(ModelType)(0),                     // 0: eval.v1.ModelType
-	(DatasetType)(0),                   // 1: eval.v1.DatasetType
-	(ArtifactType)(0),                  // 2: eval.v1.ArtifactType
-	(*HealthCheckRequest)(nil),         // 3: eval.v1.HealthCheckRequest
-	(*HealthCheckResponse)(nil),        // 4: eval.v1.HealthCheckResponse
-	(*ValidateEvalConfigRequest)(nil),  // 5: eval.v1.ValidateEvalConfigRequest
-	(*ValidateEvalConfigResponse)(nil), // 6: eval.v1.ValidateEvalConfigResponse
-	(*BuildEvalConfigRequest)(nil),     // 7: eval.v1.BuildEvalConfigRequest
-	(*BuildEvalConfigResponse)(nil),    // 8: eval.v1.BuildEvalConfigResponse
-	(*ExecuteEvalRequest)(nil),         // 9: eval.v1.ExecuteEvalRequest
-	(*ExecuteEvalResponse)(nil),        // 10: eval.v1.ExecuteEvalResponse
-	(*ParseEvalResultRequest)(nil),     // 11: eval.v1.ParseEvalResultRequest
-	(*ParseEvalResultResponse)(nil),    // 12: eval.v1.ParseEvalResultResponse
-	(*CancelEvalRequest)(nil),          // 13: eval.v1.CancelEvalRequest
-	(*CancelEvalResponse)(nil),         // 14: eval.v1.CancelEvalResponse
-	(*EvalConfig)(nil),                 // 15: eval.v1.EvalConfig
-	(*ModelConfig)(nil),                // 16: eval.v1.ModelConfig
-	(*DatasetConfig)(nil),              // 17: eval.v1.DatasetConfig
-	(*RuntimeConfig)(nil),              // 18: eval.v1.RuntimeConfig
-	(*EvalResult)(nil),                 // 19: eval.v1.EvalResult
-	(*Metric)(nil),                     // 20: eval.v1.Metric
-	(*Artifact)(nil),                   // 21: eval.v1.Artifact
-	(*ValidationError)(nil),            // 22: eval.v1.ValidationError
-	(*CoreError)(nil),                  // 23: eval.v1.CoreError
-	nil,                                // 24: eval.v1.EvalConfig.ExtraParamsEntry
-	nil,                                // 25: eval.v1.ModelConfig.ParamsEntry
-	nil,                                // 26: eval.v1.DatasetConfig.ParamsEntry
-	nil,                                // 27: eval.v1.EvalResult.MetadataEntry
-	nil,                                // 28: eval.v1.Metric.ExtraEntry
+	(ModelType)(0),                         // 0: eval.v1.ModelType
+	(DatasetType)(0),                       // 1: eval.v1.DatasetType
+	(ArtifactType)(0),                      // 2: eval.v1.ArtifactType
+	(*HealthCheckRequest)(nil),             // 3: eval.v1.HealthCheckRequest
+	(*HealthCheckResponse)(nil),            // 4: eval.v1.HealthCheckResponse
+	(*ValidateEvalConfigRequest)(nil),      // 5: eval.v1.ValidateEvalConfigRequest
+	(*ValidateEvalConfigResponse)(nil),     // 6: eval.v1.ValidateEvalConfigResponse
+	(*BuildEvalConfigRequest)(nil),         // 7: eval.v1.BuildEvalConfigRequest
+	(*BuildEvalConfigResponse)(nil),        // 8: eval.v1.BuildEvalConfigResponse
+	(*ExecuteEvalRequest)(nil),             // 9: eval.v1.ExecuteEvalRequest
+	(*ExecuteEvalResponse)(nil),            // 10: eval.v1.ExecuteEvalResponse
+	(*ParseEvalResultRequest)(nil),         // 11: eval.v1.ParseEvalResultRequest
+	(*ParseEvalResultResponse)(nil),        // 12: eval.v1.ParseEvalResultResponse
+	(*CancelEvalRequest)(nil),              // 13: eval.v1.CancelEvalRequest
+	(*CancelEvalResponse)(nil),             // 14: eval.v1.CancelEvalResponse
+	(*EvalConfig)(nil),                     // 15: eval.v1.EvalConfig
+	(*ModelConfig)(nil),                    // 16: eval.v1.ModelConfig
+	(*DatasetConfig)(nil),                  // 17: eval.v1.DatasetConfig
+	(*RuntimeConfig)(nil),                  // 18: eval.v1.RuntimeConfig
+	(*EvalResult)(nil),                     // 19: eval.v1.EvalResult
+	(*Metric)(nil),                         // 20: eval.v1.Metric
+	(*Artifact)(nil),                       // 21: eval.v1.Artifact
+	(*ValidationError)(nil),                // 22: eval.v1.ValidationError
+	(*CoreError)(nil),                      // 23: eval.v1.CoreError
+	(*PullHuggingFaceDatasetRequest)(nil),  // 24: eval.v1.PullHuggingFaceDatasetRequest
+	(*PullHuggingFaceDatasetResponse)(nil), // 25: eval.v1.PullHuggingFaceDatasetResponse
+	(*PrepareCustomDatasetRequest)(nil),    // 26: eval.v1.PrepareCustomDatasetRequest
+	(*PrepareCustomDatasetResponse)(nil),   // 27: eval.v1.PrepareCustomDatasetResponse
+	nil,                                    // 28: eval.v1.EvalConfig.ExtraParamsEntry
+	nil,                                    // 29: eval.v1.ModelConfig.ParamsEntry
+	nil,                                    // 30: eval.v1.DatasetConfig.ParamsEntry
+	nil,                                    // 31: eval.v1.EvalResult.MetadataEntry
+	nil,                                    // 32: eval.v1.Metric.ExtraEntry
 }
 var file_eval_service_proto_depIdxs = []int32{
 	15, // 0: eval.v1.ValidateEvalConfigRequest.config:type_name -> eval.v1.EvalConfig
@@ -1751,33 +2070,39 @@ var file_eval_service_proto_depIdxs = []int32{
 	16, // 11: eval.v1.EvalConfig.model:type_name -> eval.v1.ModelConfig
 	17, // 12: eval.v1.EvalConfig.dataset:type_name -> eval.v1.DatasetConfig
 	18, // 13: eval.v1.EvalConfig.runtime:type_name -> eval.v1.RuntimeConfig
-	24, // 14: eval.v1.EvalConfig.extra_params:type_name -> eval.v1.EvalConfig.ExtraParamsEntry
+	28, // 14: eval.v1.EvalConfig.extra_params:type_name -> eval.v1.EvalConfig.ExtraParamsEntry
 	0,  // 15: eval.v1.ModelConfig.type:type_name -> eval.v1.ModelType
-	25, // 16: eval.v1.ModelConfig.params:type_name -> eval.v1.ModelConfig.ParamsEntry
+	29, // 16: eval.v1.ModelConfig.params:type_name -> eval.v1.ModelConfig.ParamsEntry
 	1,  // 17: eval.v1.DatasetConfig.type:type_name -> eval.v1.DatasetType
-	26, // 18: eval.v1.DatasetConfig.params:type_name -> eval.v1.DatasetConfig.ParamsEntry
+	30, // 18: eval.v1.DatasetConfig.params:type_name -> eval.v1.DatasetConfig.ParamsEntry
 	20, // 19: eval.v1.EvalResult.metrics:type_name -> eval.v1.Metric
 	21, // 20: eval.v1.EvalResult.artifacts:type_name -> eval.v1.Artifact
-	27, // 21: eval.v1.EvalResult.metadata:type_name -> eval.v1.EvalResult.MetadataEntry
-	28, // 22: eval.v1.Metric.extra:type_name -> eval.v1.Metric.ExtraEntry
+	31, // 21: eval.v1.EvalResult.metadata:type_name -> eval.v1.EvalResult.MetadataEntry
+	32, // 22: eval.v1.Metric.extra:type_name -> eval.v1.Metric.ExtraEntry
 	2,  // 23: eval.v1.Artifact.type:type_name -> eval.v1.ArtifactType
-	3,  // 24: eval.v1.EvalService.HealthCheck:input_type -> eval.v1.HealthCheckRequest
-	5,  // 25: eval.v1.EvalService.ValidateEvalConfig:input_type -> eval.v1.ValidateEvalConfigRequest
-	7,  // 26: eval.v1.EvalService.BuildEvalConfig:input_type -> eval.v1.BuildEvalConfigRequest
-	9,  // 27: eval.v1.EvalService.ExecuteEval:input_type -> eval.v1.ExecuteEvalRequest
-	11, // 28: eval.v1.EvalService.ParseEvalResult:input_type -> eval.v1.ParseEvalResultRequest
-	13, // 29: eval.v1.EvalService.CancelEval:input_type -> eval.v1.CancelEvalRequest
-	4,  // 30: eval.v1.EvalService.HealthCheck:output_type -> eval.v1.HealthCheckResponse
-	6,  // 31: eval.v1.EvalService.ValidateEvalConfig:output_type -> eval.v1.ValidateEvalConfigResponse
-	8,  // 32: eval.v1.EvalService.BuildEvalConfig:output_type -> eval.v1.BuildEvalConfigResponse
-	10, // 33: eval.v1.EvalService.ExecuteEval:output_type -> eval.v1.ExecuteEvalResponse
-	12, // 34: eval.v1.EvalService.ParseEvalResult:output_type -> eval.v1.ParseEvalResultResponse
-	14, // 35: eval.v1.EvalService.CancelEval:output_type -> eval.v1.CancelEvalResponse
-	30, // [30:36] is the sub-list for method output_type
-	24, // [24:30] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	23, // 24: eval.v1.PullHuggingFaceDatasetResponse.error:type_name -> eval.v1.CoreError
+	23, // 25: eval.v1.PrepareCustomDatasetResponse.error:type_name -> eval.v1.CoreError
+	3,  // 26: eval.v1.EvalService.HealthCheck:input_type -> eval.v1.HealthCheckRequest
+	5,  // 27: eval.v1.EvalService.ValidateEvalConfig:input_type -> eval.v1.ValidateEvalConfigRequest
+	7,  // 28: eval.v1.EvalService.BuildEvalConfig:input_type -> eval.v1.BuildEvalConfigRequest
+	9,  // 29: eval.v1.EvalService.ExecuteEval:input_type -> eval.v1.ExecuteEvalRequest
+	11, // 30: eval.v1.EvalService.ParseEvalResult:input_type -> eval.v1.ParseEvalResultRequest
+	13, // 31: eval.v1.EvalService.CancelEval:input_type -> eval.v1.CancelEvalRequest
+	24, // 32: eval.v1.EvalService.PullHuggingFaceDataset:input_type -> eval.v1.PullHuggingFaceDatasetRequest
+	26, // 33: eval.v1.EvalService.PrepareCustomDataset:input_type -> eval.v1.PrepareCustomDatasetRequest
+	4,  // 34: eval.v1.EvalService.HealthCheck:output_type -> eval.v1.HealthCheckResponse
+	6,  // 35: eval.v1.EvalService.ValidateEvalConfig:output_type -> eval.v1.ValidateEvalConfigResponse
+	8,  // 36: eval.v1.EvalService.BuildEvalConfig:output_type -> eval.v1.BuildEvalConfigResponse
+	10, // 37: eval.v1.EvalService.ExecuteEval:output_type -> eval.v1.ExecuteEvalResponse
+	12, // 38: eval.v1.EvalService.ParseEvalResult:output_type -> eval.v1.ParseEvalResultResponse
+	14, // 39: eval.v1.EvalService.CancelEval:output_type -> eval.v1.CancelEvalResponse
+	25, // 40: eval.v1.EvalService.PullHuggingFaceDataset:output_type -> eval.v1.PullHuggingFaceDatasetResponse
+	27, // 41: eval.v1.EvalService.PrepareCustomDataset:output_type -> eval.v1.PrepareCustomDatasetResponse
+	34, // [34:42] is the sub-list for method output_type
+	26, // [26:34] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_eval_service_proto_init() }
@@ -1791,7 +2116,7 @@ func file_eval_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_eval_service_proto_rawDesc), len(file_eval_service_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   26,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

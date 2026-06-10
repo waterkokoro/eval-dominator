@@ -1,0 +1,11 @@
+question,A,B,C,D,answer
+"What is the capital of France?","London","Paris","Berlin","Madrid","B"
+"Which planet is known as the Red Planet?","Venus","Mars","Jupiter","Saturn","B"
+"What is 2 + 2?","3","4","5","6","B"
+"Which language is primarily used for web frontend?","Python","Java","JavaScript","C++","C"
+"What is the largest ocean on Earth?","Atlantic","Indian","Arctic","Pacific","D"
+"Who wrote 'Romeo and Juliet'?","Dickens","Shakespeare","Hemingway","Tolstoy","B"
+"What is the chemical symbol for water?","O2","H2O","CO2","NaCl","B"
+"Which country has the largest population?","USA","India","China","Russia","C"
+"What is the speed of light approximately?","300 km/s","3000 km/s","300000 km/s","3000000 km/s","C"
+"Which element has the atomic number 1?","Helium","Hydrogen","Lithium","Carbon","B"

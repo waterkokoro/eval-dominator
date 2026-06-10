@@ -24,8 +24,28 @@ export const LANGUAGES = [
   { code: "en-US", label: "English", app: enUS, el: elementEnUS }
 ];
 
+/** 深度合并：将 src 中的叶子节点递归合入 target（不修改原始对象） */
+function deepMerge(target, src) {
+  const out = { ...target };
+  for (const key of Object.keys(src)) {
+    if (
+      src[key] &&
+      typeof src[key] === "object" &&
+      !Array.isArray(src[key]) &&
+      out[key] &&
+      typeof out[key] === "object" &&
+      !Array.isArray(out[key])
+    ) {
+      out[key] = deepMerge(out[key], src[key]);
+    } else {
+      out[key] = src[key];
+    }
+  }
+  return out;
+}
+
 const messages = LANGUAGES.reduce((acc, item) => {
-  acc[item.code] = item.app;
+  acc[item.code] = deepMerge(item.app, item.el || {});
   return acc;
 }, {});
 

@@ -15,6 +15,9 @@
         >
           {{ $t("dataset.list.syncBuiltin") }}
         </el-button>
+        <el-button icon="el-icon-download" @click="hfDialogVisible = true">
+          {{ $t("dataset.list.importHuggingFace") }}
+        </el-button>
         <el-button type="primary" icon="el-icon-plus" @click="openCreate">
           {{ $t("dataset.list.addCustom") }}
         </el-button>
@@ -31,9 +34,47 @@
             <el-radio-button label="all">{{ $t("dataset.list.filters.all") }}</el-radio-button>
             <el-radio-button label="builtin">{{ $t("dataset.list.filters.builtin") }}</el-radio-button>
             <el-radio-button label="custom">{{ $t("dataset.list.filters.custom") }}</el-radio-button>
+            <el-radio-button label="huggingface">{{ $t("dataset.list.filters.huggingface") }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
       </el-form>
+    </el-card>
+
+    <!-- Demo datasets section -->
+    <el-card v-if="demos.length" shadow="never" class="demo-card">
+      <div slot="header" class="demo-header">
+        <span>{{ $t("dataset.demo.title") }}</span>
+        <span class="demo-desc">{{ $t("dataset.demo.description") }}</span>
+      </div>
+      <div class="demo-list">
+        <el-tag
+          v-for="demo in demos"
+          :key="demo.name"
+          size="medium"
+          effect="plain"
+          class="demo-tag"
+        >
+          <i class="el-icon-document" />
+          {{ demo.name }}
+          <span class="demo-meta">({{ demo.taskType }}, {{ demo.sampleCount }} samples)</span>
+          <el-button
+            size="mini"
+            type="text"
+            class="demo-import-btn"
+            @click="handlePreviewDemo(demo)"
+          >
+            {{ $t("dataset.demo.previewButton") }}
+          </el-button>
+          <el-button
+            size="mini"
+            type="text"
+            class="demo-import-btn"
+            @click="handleImportDemo(demo)"
+          >
+            {{ $t("dataset.demo.importButton") }}
+          </el-button>
+        </el-tag>
+      </div>
     </el-card>
 
     <el-card shadow="never" class="table-card">
@@ -49,7 +90,7 @@
             <div class="cell-main">
               <div class="cell-title">
                 <span>{{ row.displayName }}</span>
-                <el-tag size="mini" :type="row.source === 'builtin' ? 'info' : 'warning'">
+                <el-tag size="mini" :type="sourceTagType(row.source)">
                   {{ $t(`dataset.source.${row.source}`) }}
                 </el-tag>
               </div>
@@ -88,8 +129,11 @@
             />
           </template>
         </el-table-column>
-        <el-table-column :label="$t('dataset.list.columns.actions')" width="180" align="right">
+        <el-table-column :label="$t('dataset.list.columns.actions')" width="220" align="right">
           <template #default="{ row }">
+            <el-button size="mini" type="text" @click="handlePreview(row)">
+              {{ $t("dataset.list.actions.preview") }}
+            </el-button>
             <el-button size="mini" type="text" @click="useDataset(row)">
               {{ $t("dataset.list.actions.use") }}
             </el-button>
@@ -102,7 +146,7 @@
               {{ $t("dataset.list.actions.edit") }}
             </el-button>
             <el-button
-              v-if="row.source === 'custom'"
+              v-if="row.source !== 'builtin'"
               size="mini"
               type="text"
               class="danger-btn"
@@ -115,10 +159,11 @@
       </el-table>
     </el-card>
 
+    <!-- Create/Edit custom dataset dialog -->
     <el-dialog
       :title="dialog.id ? $t('dataset.dialog.editTitle') : $t('dataset.dialog.createTitle')"
       :visible.sync="dialog.visible"
-      width="540px"
+      width="560px"
       append-to-body
       @closed="resetDialog"
     >
@@ -129,12 +174,47 @@
         label-width="100px"
         size="small"
       >
-        <el-form-item :label="$t('dataset.dialog.fields.code')" prop="code">
+        <template v-if="!dialog.id">
+          <el-form-item :label="$t('dataset.dialog.fields.dataSource')">
+            <el-radio-group v-model="dialog.form.dataSource" @change="onDataSourceChange">
+              <el-radio label="upload">{{ $t("dataset.dialog.fields.fileUpload") }}</el-radio>
+              <el-radio label="path">{{ $t("dataset.dialog.fields.localPath") }}</el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </template>
+
+        <el-form-item v-if="dialog.form.dataSource === 'upload' && !dialog.id" :label="$t('dataset.dialog.fields.fileUpload')">
+          <el-upload
+            ref="fileUpload"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="onFileChange"
+            :on-remove="onFileRemove"
+            accept=".csv,.jsonl,.json"
+            drag
+          >
+            <i class="el-icon-upload" />
+            <div>CSV / JSONL / JSON</div>
+          </el-upload>
+        </el-form-item>
+
+        <el-form-item v-if="dialog.form.dataSource === 'path' && !dialog.id" :label="$t('dataset.dialog.fields.localPath')">
           <el-input
-            v-model="dialog.form.code"
-            :disabled="!!dialog.id"
-            :placeholder="$t('dataset.dialog.fields.codePlaceholder')"
+            v-model="dialog.form.localPath"
+            :placeholder="$t('dataset.dialog.fields.localPathPlaceholder')"
           />
+        </el-form-item>
+
+        <el-form-item v-if="!dialog.id" :label="$t('dataset.dialog.fields.taskType')">
+          <el-radio-group v-model="dialog.form.taskType">
+            <el-radio label="choice">{{ $t("dataset.dialog.fields.taskTypeChoice") }}</el-radio>
+            <el-radio label="qa">{{ $t("dataset.dialog.fields.taskTypeQA") }}</el-radio>
+            <el-radio label="classification">{{ $t("dataset.dialog.fields.taskTypeClassification") }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item v-if="dialog.id" :label="$t('dataset.dialog.fields.code')">
+          <el-input v-model="dialog.form.code" disabled />
         </el-form-item>
         <el-form-item :label="$t('dataset.dialog.fields.displayName')" prop="displayName">
           <el-input v-model="dialog.form.displayName" :placeholder="$t('dataset.dialog.fields.displayNamePlaceholder')" />
@@ -147,16 +227,6 @@
             :placeholder="$t('dataset.dialog.fields.descriptionPlaceholder')"
           />
         </el-form-item>
-        <el-form-item :label="$t('dataset.dialog.fields.sampleCount')">
-          <el-input-number
-            v-model="dialog.form.sampleCount"
-            :min="0"
-            controls-position="right"
-          />
-        </el-form-item>
-        <el-form-item :label="$t('dataset.dialog.fields.type')">
-          <el-input v-model="dialog.form.type" :placeholder="$t('dataset.dialog.fields.typePlaceholder')" />
-        </el-form-item>
       </el-form>
       <span slot="footer">
         <el-button @click="dialog.visible = false">{{ $t("common.actions.cancel") }}</el-button>
@@ -165,11 +235,80 @@
         </el-button>
       </span>
     </el-dialog>
+
+    <!-- HuggingFace search dialog -->
+    <HuggingFaceSearchDialog
+      :visible.sync="hfDialogVisible"
+      @pulled="loadList"
+    />
+
+    <!-- Delete confirm dialog -->
+    <el-dialog
+      :title="$t('dataset.messages.deleteConfirmTitle')"
+      :visible.sync="deleteConfirm.visible"
+      width="420px"
+      :close-on-click-modal="false"
+      append-to-body
+    >
+      <p v-if="deleteConfirm.target">{{ $t('dataset.messages.deleteConfirm', { name: deleteConfirm.target.displayName }) }}</p>
+      <div slot="footer">
+        <el-button @click="deleteConfirm.visible = false">{{ $t('common.actions.cancel') }}</el-button>
+        <el-button type="danger" :loading="deleteConfirm.deleting" @click="confirmDelete">{{ $t('dataset.messages.deleteConfirmOk') }}</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- Preview dialog -->
+    <el-dialog
+      :title="preview.title"
+      :visible.sync="preview.visible"
+      width="80%"
+      append-to-body
+      top="5vh"
+    >
+      <div v-loading="preview.loading" class="preview-body">
+        <div v-if="preview.error" class="preview-error">
+          <i class="el-icon-warning" /> {{ preview.error }}
+        </div>
+        <template v-else-if="preview.data">
+          <div class="preview-meta">
+            <span>{{ $t("dataset.preview.format") }}: <el-tag size="mini">{{ preview.data.fileFormat }}</el-tag></span>
+            <span>{{ $t("dataset.preview.total") }}: <strong>{{ preview.data.total }}</strong></span>
+            <span>{{ $t("dataset.preview.showing") }}: <strong>{{ preview.data.previewSize }}</strong></span>
+          </div>
+          <div v-if="preview.data.totalColumns" class="preview-warning">
+            <i class="el-icon-warning" />
+            {{ $t("dataset.preview.columnsTruncated", { total: preview.data.totalColumns, shown: preview.data.headers.length }) }}
+          </div>
+          <el-table
+            :data="preview.data.rows"
+            size="mini"
+            stripe
+            border
+            max-height="480"
+            class="preview-table"
+          >
+            <el-table-column
+              v-for="header in preview.data.headers"
+              :key="header"
+              :prop="header"
+              :label="header"
+              min-width="140"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }">
+                <span class="preview-cell">{{ formatCellValue(row[header]) }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </template>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import PageHeader from "@/components/PageHeader.vue";
+import HuggingFaceSearchDialog from "./HuggingFaceSearchDialog.vue";
 
 import {
   listDatasets,
@@ -177,7 +316,12 @@ import {
   updateDataset,
   setDatasetEnabled,
   deleteDataset,
-  syncDatasets
+  syncDatasets,
+  uploadDatasetFile,
+  createCustomFromPath,
+  getDemoDatasets,
+  previewDataset,
+  previewDatasetByPath
 } from "@/api/dataset";
 import { resolveApiErrorMessage } from "@/api/http";
 
@@ -186,17 +330,19 @@ const buildDialog = () => ({
   saving: false,
   id: null,
   form: {
-    code: "",
+    dataSource: "upload",
+    taskType: "qa",
     displayName: "",
     description: "",
-    sampleCount: 0,
-    type: "custom"
+    localPath: "",
+    code: "",
+    file: null
   }
 });
 
 export default {
   name: "DatasetListView",
-  components: { PageHeader },
+  components: { PageHeader, HuggingFaceSearchDialog },
   data() {
     return {
       loading: false,
@@ -204,8 +350,22 @@ export default {
       includeDisabled: true,
       sourceFilter: "all",
       rows: [],
+      demos: [],
       dialog: buildDialog(),
-      enabledColor: "#67c23a"
+      enabledColor: "#67c23a",
+      hfDialogVisible: false,
+      preview: {
+        visible: false,
+        loading: false,
+        title: "",
+        data: null,
+        error: null
+      },
+      deleteConfirm: {
+        visible: false,
+        deleting: false,
+        target: null
+      }
     };
   },
   computed: {
@@ -219,13 +379,13 @@ export default {
     dialogRules() {
       const t = (k) => this.$t(`dataset.dialog.rules.${k}`);
       return {
-        code: [{ required: true, message: t("codeRequired"), trigger: "blur" }],
         displayName: [{ required: true, message: t("displayNameRequired"), trigger: "blur" }]
       };
     }
   },
   created() {
     this.loadList();
+    this.loadDemos();
   },
   methods: {
     async loadList() {
@@ -238,6 +398,14 @@ export default {
         this.$message.error(resolveApiErrorMessage(error) || this.$t("dataset.list.loadFailed"));
       } finally {
         this.loading = false;
+      }
+    },
+    async loadDemos() {
+      try {
+        const data = await getDemoDatasets();
+        this.demos = Array.isArray(data) ? data : data?.items || [];
+      } catch {
+        this.demos = [];
       }
     },
     async handleSync() {
@@ -277,12 +445,21 @@ export default {
       this.dialog.form.code = row.code;
       this.dialog.form.displayName = row.displayName;
       this.dialog.form.description = row.description;
-      this.dialog.form.sampleCount = row.sampleCount;
-      this.dialog.form.type = row.type || "custom";
       this.dialog.visible = true;
     },
     resetDialog() {
       this.$refs.dialogForm?.resetFields();
+      this.dialog.form.file = null;
+    },
+    onDataSourceChange() {
+      this.dialog.form.file = null;
+      this.dialog.form.localPath = "";
+    },
+    onFileChange(file) {
+      this.dialog.form.file = file.raw;
+    },
+    onFileRemove() {
+      this.dialog.form.file = null;
     },
     async handleSave() {
       const valid = await this.$refs.dialogForm.validate().catch(() => false);
@@ -293,18 +470,25 @@ export default {
           await updateDataset(this.dialog.id, {
             displayName: this.dialog.form.displayName,
             description: this.dialog.form.description,
-            type: this.dialog.form.type,
-            sampleCount: this.dialog.form.sampleCount,
             enabled: true
           });
-        } else {
-          await createDataset({
-            code: this.dialog.form.code,
+        } else if (this.dialog.form.dataSource === "upload" && this.dialog.form.file) {
+          await uploadDatasetFile(this.dialog.form.file, {
             displayName: this.dialog.form.displayName,
             description: this.dialog.form.description,
-            type: this.dialog.form.type,
-            sampleCount: this.dialog.form.sampleCount
+            taskType: this.dialog.form.taskType
           });
+        } else if (this.dialog.form.dataSource === "path" && this.dialog.form.localPath) {
+          await createCustomFromPath({
+            displayName: this.dialog.form.displayName,
+            description: this.dialog.form.description,
+            localPath: this.dialog.form.localPath,
+            taskType: this.dialog.form.taskType
+          });
+        } else {
+          this.$message.warning("Please select a data source");
+          this.dialog.saving = false;
+          return;
         }
         this.$message.success(this.$t("dataset.messages.saveSuccess"));
         this.dialog.visible = false;
@@ -315,22 +499,38 @@ export default {
         this.dialog.saving = false;
       }
     },
-    async handleDelete(row) {
-      try {
-        await this.$confirm(
-          this.$t("dataset.messages.deleteConfirm", { name: row.displayName }),
-          this.$t("common.messages.tip"),
-          { type: "warning" }
-        );
-      } catch (e) {
-        return;
-      }
+    handleDelete(row) {
+      this.deleteConfirm.target = row;
+      this.deleteConfirm.visible = true;
+    },
+    async confirmDelete() {
+      const row = this.deleteConfirm.target;
+      if (!row) return;
+      this.deleteConfirm.deleting = true;
       try {
         await deleteDataset(row.id);
         this.$message.success(this.$t("dataset.messages.deleteSuccess"));
+        this.deleteConfirm.visible = false;
         this.loadList();
       } catch (error) {
         this.$message.error(resolveApiErrorMessage(error) || this.$t("dataset.messages.deleteFailed"));
+      } finally {
+        this.deleteConfirm.deleting = false;
+      }
+    },
+    async handleImportDemo(demo) {
+      try {
+        await createCustomFromPath({
+          code: `demo_${demo.name}`,
+          displayName: `Demo: ${demo.name}`,
+          description: demo.description,
+          localPath: demo.path,
+          taskType: demo.taskType
+        });
+        this.$message.success(this.$t("dataset.demo.importSuccess"));
+        this.loadList();
+      } catch (error) {
+        this.$message.error(resolveApiErrorMessage(error));
       }
     },
     useDataset(row) {
@@ -341,6 +541,50 @@ export default {
           datasetName: row.code
         }
       });
+    },
+    async handlePreview(row) {
+      this.preview = {
+        visible: true,
+        loading: true,
+        title: `${this.$t("dataset.preview.title")} - ${row.displayName}`,
+        data: null,
+        error: null
+      };
+      try {
+        const data = await previewDataset(row.id, 20);
+        this.preview.data = data;
+      } catch (error) {
+        this.preview.error = resolveApiErrorMessage(error) || this.$t("dataset.preview.failed");
+      } finally {
+        this.preview.loading = false;
+      }
+    },
+    async handlePreviewDemo(demo) {
+      this.preview = {
+        visible: true,
+        loading: true,
+        title: `${this.$t("dataset.preview.title")} - ${demo.name}`,
+        data: null,
+        error: null
+      };
+      try {
+        const data = await previewDatasetByPath(demo.path, 20);
+        this.preview.data = data;
+      } catch (error) {
+        this.preview.error = resolveApiErrorMessage(error) || this.$t("dataset.preview.failed");
+      } finally {
+        this.preview.loading = false;
+      }
+    },
+    formatCellValue(val) {
+      if (val === null || val === undefined) return "";
+      if (typeof val === "object") return JSON.stringify(val);
+      return String(val);
+    },
+    sourceTagType(source) {
+      if (source === "builtin") return "info";
+      if (source === "huggingface") return "success";
+      return "warning";
     }
   }
 };
@@ -353,8 +597,38 @@ export default {
   gap: 16px;
 }
 .filter-card,
-.table-card {
+.table-card,
+.demo-card {
   border-radius: 8px;
+}
+.demo-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+.demo-desc {
+  font-size: 12px;
+  color: #909399;
+  font-weight: normal;
+}
+.demo-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.demo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.demo-meta {
+  font-size: 11px;
+  color: #909399;
+}
+.demo-import-btn {
+  margin-left: 4px;
+  padding: 0 4px;
 }
 .cell-main {
   display: flex;
@@ -383,5 +657,41 @@ export default {
 }
 .muted {
   color: #c0c4cc;
+}
+.preview-body {
+  min-height: 120px;
+}
+.preview-error {
+  text-align: center;
+  padding: 40px 0;
+  color: #e6a23c;
+  font-size: 14px;
+}
+.preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #606266;
+}
+.preview-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #e6a23c;
+  background: #fdf6ec;
+  border-radius: 4px;
+}
+.preview-table {
+  width: 100%;
+}
+.preview-cell {
+  word-break: break-all;
+  font-size: 12px;
+  line-height: 1.4;
 }
 </style>

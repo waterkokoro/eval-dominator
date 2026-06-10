@@ -67,6 +67,10 @@ CREATE TABLE IF NOT EXISTS datasets (
     inference_mode TEXT NOT NULL DEFAULT '',
     config_path TEXT NOT NULL DEFAULT '',
     extra_json TEXT NOT NULL DEFAULT '{}',
+    hf_repo TEXT NOT NULL DEFAULT '',
+    hf_subset TEXT NOT NULL DEFAULT '',
+    local_path TEXT NOT NULL DEFAULT '',
+    file_format TEXT NOT NULL DEFAULT '',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

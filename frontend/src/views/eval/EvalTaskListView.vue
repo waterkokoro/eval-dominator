@@ -192,6 +192,21 @@
         />
       </div>
     </el-card>
+
+    <!-- Cancel confirm dialog -->
+    <el-dialog
+      :title="$t('eval.list.cancelConfirmTitle')"
+      :visible.sync="cancelConfirm.visible"
+      width="460px"
+      :close-on-click-modal="false"
+      append-to-body
+    >
+      <p v-if="cancelConfirm.target">{{ $t('eval.list.cancelConfirmContent', { name: cancelConfirm.target.taskName || cancelConfirm.target.evalTaskId }) }}</p>
+      <div slot="footer">
+        <el-button @click="cancelConfirm.visible = false">{{ $t('eval.list.cancelConfirmCancel') }}</el-button>
+        <el-button type="danger" :loading="cancellingId !== ''" @click="confirmCancel">{{ $t('eval.list.cancelConfirmOk') }}</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -228,6 +243,10 @@ export default {
       total: 0,
       pollTimer: null,
       cancellingId: "",
+      cancelConfirm: {
+        visible: false,
+        target: null
+      },
       pagination: {
         page: 1,
         pageSize: 10
@@ -329,25 +348,17 @@ export default {
     canCancelEvalStatus,
     async handleCancel(row) {
       if (!row?.evalTaskId) return;
-      try {
-        await this.$confirm(
-          this.$t("eval.list.cancelConfirmContent", {
-            name: row.taskName || row.evalTaskId
-          }),
-          this.$t("eval.list.cancelConfirmTitle"),
-          {
-            type: "warning",
-            confirmButtonText: this.$t("eval.list.cancelConfirmOk"),
-            cancelButtonText: this.$t("eval.list.cancelConfirmCancel")
-          }
-        );
-      } catch (e) {
-        return;
-      }
+      this.cancelConfirm.target = row;
+      this.cancelConfirm.visible = true;
+    },
+    async confirmCancel() {
+      const row = this.cancelConfirm.target;
+      if (!row?.evalTaskId) return;
       this.cancellingId = row.evalTaskId;
       try {
         await cancelEvalTask(row.evalTaskId);
         this.$message.success(this.$t("eval.list.cancelRequested"));
+        this.cancelConfirm.visible = false;
         await this.loadList(true);
       } finally {
         this.cancellingId = "";

@@ -42,7 +42,9 @@
     }
   },
   "messages": {
+    "deleteConfirmTitle": "删除模型",
     "deleteConfirm": "确认删除模型「{name}」？",
+    "deleteConfirmOk": "确定删除",
     "saveSuccess": "保存成功",
     "saveFailed": "保存失败",
     "deleteSuccess": "已删除",

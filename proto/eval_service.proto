@@ -23,6 +23,12 @@ service EvalService {
 
   // CancelEval 终止指定任务正在运行的 OpenCompass 子进程组。
   rpc CancelEval(CancelEvalRequest) returns (CancelEvalResponse);
+
+  // PullHuggingFaceDataset 通过 Python datasets 库下载 HuggingFace 数据集到本地。
+  rpc PullHuggingFaceDataset(PullHuggingFaceDatasetRequest) returns (PullHuggingFaceDatasetResponse);
+
+  // PrepareCustomDataset 验证自定义数据集文件格式并生成 OpenCompass 可用的配置。
+  rpc PrepareCustomDataset(PrepareCustomDatasetRequest) returns (PrepareCustomDatasetResponse);
 }
 
 message HealthCheckRequest {
@@ -65,6 +71,10 @@ message ExecuteEvalRequest {
   EvalConfig config = 3;
   string config_path = 4;
   string output_dir = 5;
+  // 非空时表示仅重跑评测节点：复用 output_dir/<reuse_timestamp>/ 下的
+  // predictions/，由 OpenCompass 通过 -r 参数复用，仅重新生成 results 与
+  // summary。Core 在执行前会清理该 timestamp 下的 results/ summary/ logs/eval/。
+  string reuse_timestamp = 6;
 }
 
 message ExecuteEvalResponse {
@@ -175,6 +185,35 @@ enum DatasetType {
   DATASET_TYPE_OPENCOMPASS_DEMO = 1;
   DATASET_TYPE_OPENCOMPASS_STANDARD = 2;
   DATASET_TYPE_CUSTOM = 3;
+  DATASET_TYPE_HUGGINGFACE = 4;
+}
+
+message PullHuggingFaceDatasetRequest {
+  string request_id = 1;
+  string repo = 2;           // HuggingFace 仓库名 e.g. "openai/gsm8k"
+  string subset = 3;         // 数据集子集 (可选)
+  string split = 4;          // 数据集分割 e.g. "test", "train"
+  string cache_dir = 5;      // 本地缓存目录
+}
+
+message PullHuggingFaceDatasetResponse {
+  bool ok = 1;
+  string local_path = 2;     // 下载后的本地路径
+  int32 sample_count = 3;    // 样本数
+  CoreError error = 4;
+}
+
+message PrepareCustomDatasetRequest {
+  string request_id = 1;
+  string local_path = 2;     // CSV/JSONL 文件路径
+  string task_type = 3;      // choice / qa / classification
+}
+
+message PrepareCustomDatasetResponse {
+  bool ok = 1;
+  string config_path = 2;    // 生成的 OpenCompass 配置路径
+  int32 sample_count = 3;    // 验证后的样本数
+  CoreError error = 4;
 }
 
 enum ArtifactType {

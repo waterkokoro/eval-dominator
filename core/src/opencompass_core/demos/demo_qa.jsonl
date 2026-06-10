@@ -1,0 +1,5 @@
+{"question": "What is machine learning?", "reference_answer": "Machine learning is a subset of artificial intelligence that enables systems to learn and improve from experience without being explicitly programmed."}
+{"question": "Explain the difference between supervised and unsupervised learning.", "reference_answer": "Supervised learning uses labeled data to train models, while unsupervised learning finds patterns in unlabeled data without predefined categories."}
+{"question": "What is a neural network?", "reference_answer": "A neural network is a computational model inspired by the human brain, consisting of interconnected nodes (neurons) organized in layers that process information."}
+{"question": "Define overfitting in machine learning.", "reference_answer": "Overfitting occurs when a model learns the training data too well, including noise and outliers, resulting in poor generalization to new unseen data."}
+{"question": "What is gradient descent?", "reference_answer": "Gradient descent is an optimization algorithm that iteratively adjusts model parameters by moving in the direction of steepest decrease of the loss function."}

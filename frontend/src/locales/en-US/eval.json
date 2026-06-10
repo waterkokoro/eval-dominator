@@ -52,10 +52,16 @@
     "tabs": {
       "overview": "Overview",
       "metrics": "Metrics",
+      "analysis": "Analysis",
       "artifacts": "Artifacts",
       "log": "Log"
     },
     "overview": {
+      "sectionTask": "Task Info",
+      "sectionModel": "Model Config",
+      "sectionDataset": "Dataset",
+      "sectionTimeline": "Timeline",
+      "sectionError": "Error",
       "taskName": "Task name",
       "taskId": "Task ID",
       "status": "Status",
@@ -73,7 +79,13 @@
     "cancelConfirmContent": "Stop this evaluation? Partial artifacts will be kept, but no further inference will run.",
     "cancelConfirmOk": "Stop",
     "cancelConfirmCancel": "Cancel",
-    "cancelRequested": "Stop request sent"
+    "cancelRequested": "Stop request sent",
+    "rerunEval": "Rerun eval only",
+    "rerunEvalConfirmTitle": "Rerun evaluate node only",
+    "rerunEvalConfirmContent": "Reuse the predictions from the previous inference and only re-run OpenCompass's evaluate stage. The model API will NOT be called again.",
+    "rerunEvalConfirmHint": "Use cases: evaluate stage succeeded but the finish step failed, or you fixed the evaluator and want to rescore with the new logic.",
+    "rerunEvalConfirmOk": "Rerun",
+    "rerunEvalRequested": "Rerun-evaluate request sent"
   },
   "submit": {
     "title": "Submit evaluation",
@@ -151,10 +163,32 @@
       "params": "Extra params",
       "datasetRequired": "Please select a dataset"
     },
+    "evaluator": {
+      "label": "Evaluator",
+      "desc": "Determines how model output is scored against the reference",
+      "rouge": "ROUGE (text similarity)",
+      "rougeDesc": "Best for open-ended QA and summarisation",
+      "accuracy": "Accuracy",
+      "accuracyDesc": "Best for multiple-choice and classification tasks",
+      "em": "Exact Match (EM)",
+      "emDesc": "Requires the output to match the reference exactly",
+      "keyword_match": "Keyword Match",
+      "keywordMatchDesc": "Checks whether expected keywords appear in the output — ideal for Agent tool-use evaluation",
+      "bleu": "BLEU (translation)",
+      "bleuDesc": "Best for machine translation tasks",
+      "jieba_rouge": "Chinese ROUGE (jieba)",
+      "jiebaRougeDesc": "ROUGE with jieba tokenisation for Chinese text"
+    },
     "runtime": {
       "timeout": "Timeout (s)",
       "maxWorkers": "Max workers",
-      "keepRawOutputs": "Keep raw outputs"
+      "keepRawOutputs": "Keep raw outputs",
+      "maxSeqLen": "Max input length",
+      "maxSeqLenTip": "Max tokens per model request. Default 16384. Decrease if the model has a smaller context window",
+      "maxOutLen": "Max output length",
+      "maxOutLenTip": "Max tokens the model can generate per request. Default 1024",
+      "analyzing": "Analyzing...",
+      "recommended": "Smart recommendation"
     },
     "footer": {
       "reset": "Reset",
@@ -173,6 +207,13 @@
     "timeout": "Timed out",
     "cancelled": "Cancelled",
     "unknown": "Unknown"
+  },
+  "steps": {
+    "prepare": "Prepare",
+    "build": "Build",
+    "infer": "Inference",
+    "evaluate": "Evaluation",
+    "finish": "Done"
   },
   "metrics": {
     "summary": {
@@ -234,14 +275,55 @@
       "downloadFailed": "Download failed"
     }
   },
+  "analysis": {
+    "unavailableTitle": "No analysis data yet",
+    "unavailableDescription": "Predictions/results have not been produced, or parsing failed.",
+    "searchPlaceholder": "Search prompt, prediction or reference",
+    "hidePass": "Hide passing items",
+    "showingCount": "Showing {count} / {total}",
+    "scoreFailed": "Call failed",
+    "summary": {
+      "total": "Total"
+    },
+    "categories": {
+      "failed": "Call failed",
+      "low": "Low score",
+      "mid": "Marginal pass",
+      "pass": "Pass / Excellent"
+    },
+    "ranges": {
+      "failed": "Agent / API error",
+      "low": "Hit rate 0-30%",
+      "mid": "Hit rate 30-80%",
+      "pass": "Hit rate ≥ 80%"
+    },
+    "fields": {
+      "prompt": "Prompt / Input",
+      "prediction": "Model output",
+      "reference": "Reference / Expected keywords"
+    },
+    "empty": {
+      "title": "No matching items",
+      "description": "Try adjusting filters or search keywords",
+      "waitDescription": "Per-item analysis will be available once the task succeeds"
+    }
+  },
   "log": {
     "tail": "Latest {count} lines",
     "autoRefresh": "Auto refresh",
+    "autoSelectLatest": "Auto pick latest",
     "refresh": "Refresh log",
     "unavailable": "Log unavailable",
     "empty": "No log yet",
     "emptyDescription": "Once the task starts, OpenCompass main log will be written and shown here.",
     "emptyContent": "No log content",
-    "loadFailed": "Failed to fetch log"
+    "loadFailed": "Failed to fetch log",
+    "noLogFiles": "No log files yet",
+    "groups": {
+      "main": "Main log",
+      "infer": "Inference",
+      "eval": "Evaluation",
+      "system": "System"
+    }
   }
 }

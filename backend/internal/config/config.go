@@ -21,7 +21,7 @@ type Config struct {
 
 // 占位符常量：example yaml 与代码共享，启动时根据这两个值判断是否仍在用默认值并打 WARN。
 const (
-	DefaultJWTSecretPlaceholder    = "replace-with-local-secret"
+	DefaultJWTSecretPlaceholder     = "replace-with-local-secret"
 	DefaultAdminPasswordPlaceholder = "admin123"
 )
 
@@ -69,6 +69,8 @@ type EvalConfig struct {
 
 type DatasetConfig struct {
 	OpenCompassDemoDir string `yaml:"opencompass_demo_dir"`
+	HuggingFaceMirror  string `yaml:"huggingface_mirror"`  // HF 镜像地址
+	DatasetStorageDir  string `yaml:"dataset_storage_dir"` // 数据集本地存储目录
 }
 
 type LogConfig struct {

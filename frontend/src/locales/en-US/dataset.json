@@ -5,12 +5,14 @@
     "description": "Manage datasets used for evaluation. Pick from this list when submitting a task.",
     "syncBuiltin": "Sync built-in datasets",
     "addCustom": "Add custom",
+    "importHuggingFace": "Import from HuggingFace",
     "filters": {
       "includeDisabled": "Include disabled",
       "source": "Source",
       "all": "All",
       "builtin": "Built-in",
-      "custom": "Custom"
+      "custom": "Custom",
+      "huggingface": "HuggingFace"
     },
     "columns": {
       "dataset": "Dataset",
@@ -23,7 +25,8 @@
     "actions": {
       "use": "Use",
       "edit": "Edit",
-      "delete": "Delete"
+      "delete": "Delete",
+      "preview": "Preview"
     },
     "inferenceMode": {
       "gen": "GEN (generative)",
@@ -36,11 +39,13 @@
     "opencompass_demo": "OpenCompass Demo",
     "opencompass_standard": "OpenCompass Standard",
     "custom": "Custom",
+    "huggingface": "HuggingFace",
     "unknown": "Unknown dataset"
   },
   "source": {
     "builtin": "Built-in",
-    "custom": "Custom"
+    "custom": "Custom",
+    "huggingface": "HuggingFace"
   },
   "dialog": {
     "createTitle": "Add custom dataset",
@@ -54,12 +59,88 @@
       "descriptionPlaceholder": "Optional dataset description",
       "sampleCount": "Samples",
       "type": "Type",
-      "typePlaceholder": "custom / opencompass_standard ..."
+      "typePlaceholder": "custom / opencompass_standard ...",
+      "dataSource": "Data source",
+      "fileUpload": "File upload",
+      "localPath": "Local path",
+      "localPathPlaceholder": "File path on server, e.g. /data/my_dataset.csv",
+      "taskType": "Task type",
+      "taskTypeChoice": "Multiple choice",
+      "taskTypeQA": "Open QA",
+      "taskTypeClassification": "Classification"
     },
     "rules": {
       "codeRequired": "Please enter the code",
       "displayNameRequired": "Please enter the display name"
     }
+  },
+  "huggingface": {
+    "dialogTitle": "Import dataset from HuggingFace",
+    "searchPlaceholder": "Search HuggingFace datasets...",
+    "searchButton": "Search",
+    "pullButton": "Pull",
+    "repullButton": "Re-pull",
+    "pulling": "Pulling...",
+    "pullSuccess": "Pull successful",
+    "pullFailed": "Pull failed",
+    "noResults": "No datasets found",
+    "loadingHint": "Loading...",
+    "resultCount": "results",
+    "sort": {
+      "trending": "Trending",
+      "downloads": "Downloads",
+      "likes": "Likes",
+      "recent": "Recently Updated"
+    },
+    "categories": {
+      "label": "Categories:",
+      "all": "All",
+      "textClassification": "Text Classification",
+      "questionAnswering": "Q&A",
+      "textGeneration": "Text Generation",
+      "summarization": "Summarization",
+      "translation": "Translation",
+      "tokenClassification": "NER",
+      "other": "Other"
+    },
+    "columns": {
+      "name": "Dataset name",
+      "description": "Description",
+      "downloads": "Downloads",
+      "likes": "Likes",
+      "actions": "Actions"
+    },
+    "pullDialog": {
+      "title": "Pull dataset configuration",
+      "subset": "Subset (optional)",
+      "subsetPlaceholder": "Leave empty for default subset",
+      "split": "Split (optional)",
+      "splitPlaceholder": "e.g. test, train"
+    },
+    "detail": {
+      "formats": "File Formats",
+      "taskTypes": "Task Types",
+      "size": "Dataset Size",
+      "files": "File Count",
+      "languages": "Languages",
+      "license": "License",
+      "loadFailed": "Detail load failed, you can still pull directly"
+    }
+  },
+  "demo": {
+    "title": "Built-in Demo Datasets",
+    "description": "These are built-in example datasets for quickly testing custom dataset evaluation",
+    "importButton": "Import & Validate",
+    "importSuccess": "Demo dataset imported",
+    "previewButton": "Preview"
+  },
+  "preview": {
+    "title": "Dataset Preview",
+    "format": "Format",
+    "total": "Total rows",
+    "showing": "Showing",
+    "failed": "Failed to load preview",
+    "columnsTruncated": "{total} columns total, showing first {shown}"
   },
   "messages": {
     "syncSuccess": "Sync done: scanned {scanned}, inserted {inserted}, updated {updated}",
@@ -69,8 +150,14 @@
     "toggleFailed": "Failed to toggle",
     "saveSuccess": "Saved",
     "saveFailed": "Failed to save",
+    "deleteConfirmTitle": "Delete Dataset",
     "deleteConfirm": "Delete \"{name}\"?",
+    "deleteConfirmOk": "Confirm Delete",
     "deleteSuccess": "Deleted",
-    "deleteFailed": "Failed to delete"
+    "deleteFailed": "Failed to delete",
+    "uploadSuccess": "File uploaded successfully",
+    "uploadFailed": "File upload failed",
+    "createFromPathSuccess": "Created successfully",
+    "createFromPathFailed": "Creation failed"
   }
 }

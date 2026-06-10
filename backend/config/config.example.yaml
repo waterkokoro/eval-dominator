@@ -38,3 +38,11 @@ eval:
 log:
   level: "info"
   dir: "../runtime/logs/backend"
+
+dataset:
+  # OpenCompass demo 数据集目录，留空则自动探测
+  opencompass_demo_dir: ""
+  # HuggingFace 镜像地址（国内用户可设置为 https://hf-mirror.com）
+  huggingface_mirror: ""
+  # 数据集本地存储目录
+  dataset_storage_dir: "../runtime/datasets"

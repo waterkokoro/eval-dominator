@@ -65,6 +65,16 @@ class EvalServiceStub(object):
                 request_serializer=eval__service__pb2.CancelEvalRequest.SerializeToString,
                 response_deserializer=eval__service__pb2.CancelEvalResponse.FromString,
                 _registered_method=True)
+        self.PullHuggingFaceDataset = channel.unary_unary(
+                '/eval.v1.EvalService/PullHuggingFaceDataset',
+                request_serializer=eval__service__pb2.PullHuggingFaceDatasetRequest.SerializeToString,
+                response_deserializer=eval__service__pb2.PullHuggingFaceDatasetResponse.FromString,
+                _registered_method=True)
+        self.PrepareCustomDataset = channel.unary_unary(
+                '/eval.v1.EvalService/PrepareCustomDataset',
+                request_serializer=eval__service__pb2.PrepareCustomDatasetRequest.SerializeToString,
+                response_deserializer=eval__service__pb2.PrepareCustomDatasetResponse.FromString,
+                _registered_method=True)
 
 
 class EvalServiceServicer(object):
@@ -113,6 +123,20 @@ class EvalServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def PullHuggingFaceDataset(self, request, context):
+        """PullHuggingFaceDataset 通过 Python datasets 库下载 HuggingFace 数据集到本地。
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PrepareCustomDataset(self, request, context):
+        """PrepareCustomDataset 验证自定义数据集文件格式并生成 OpenCompass 可用的配置。
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_EvalServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -145,6 +169,16 @@ def add_EvalServiceServicer_to_server(servicer, server):
                     servicer.CancelEval,
                     request_deserializer=eval__service__pb2.CancelEvalRequest.FromString,
                     response_serializer=eval__service__pb2.CancelEvalResponse.SerializeToString,
+            ),
+            'PullHuggingFaceDataset': grpc.unary_unary_rpc_method_handler(
+                    servicer.PullHuggingFaceDataset,
+                    request_deserializer=eval__service__pb2.PullHuggingFaceDatasetRequest.FromString,
+                    response_serializer=eval__service__pb2.PullHuggingFaceDatasetResponse.SerializeToString,
+            ),
+            'PrepareCustomDataset': grpc.unary_unary_rpc_method_handler(
+                    servicer.PrepareCustomDataset,
+                    request_deserializer=eval__service__pb2.PrepareCustomDatasetRequest.FromString,
+                    response_serializer=eval__service__pb2.PrepareCustomDatasetResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -310,6 +344,60 @@ class EvalService(object):
             '/eval.v1.EvalService/CancelEval',
             eval__service__pb2.CancelEvalRequest.SerializeToString,
             eval__service__pb2.CancelEvalResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def PullHuggingFaceDataset(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/eval.v1.EvalService/PullHuggingFaceDataset',
+            eval__service__pb2.PullHuggingFaceDatasetRequest.SerializeToString,
+            eval__service__pb2.PullHuggingFaceDatasetResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def PrepareCustomDataset(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/eval.v1.EvalService/PrepareCustomDataset',
+            eval__service__pb2.PrepareCustomDatasetRequest.SerializeToString,
+            eval__service__pb2.PrepareCustomDatasetResponse.FromString,
             options,
             channel_credentials,
             insecure,

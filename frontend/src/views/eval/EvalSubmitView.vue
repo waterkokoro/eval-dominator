@@ -234,6 +234,22 @@
             show-icon
           />
         </el-form-item>
+        <el-form-item :label="$t('eval.submit.evaluator.label')">
+          <el-select v-model="form.evaluatorType" style="width: 100%">
+            <el-option
+              v-for="opt in evaluatorOptions"
+              :key="opt.value"
+              :value="opt.value"
+              :label="opt.label"
+            >
+              <div class="evaluator-option">
+                <span>{{ opt.label }}</span>
+                <span class="evaluator-option-desc">{{ opt.desc }}</span>
+              </div>
+            </el-option>
+          </el-select>
+          <p class="form-hint">{{ $t('eval.submit.evaluator.desc') }}</p>
+        </el-form-item>
         <el-form-item :label="$t('eval.submit.dataset.params')">
           <KeyValueEditor v-model="form.params" :placeholder-key="$t('common.placeholders.key')" :placeholder-value="$t('common.placeholders.value')" />
         </el-form-item>
@@ -272,6 +288,42 @@
           <el-form-item :label="$t('eval.submit.runtime.keepRawOutputs')">
             <el-switch v-model="form.runtime.keepRawOutputs" />
           </el-form-item>
+          <el-form-item :label="$t('eval.submit.runtime.maxSeqLen')">
+            <el-input-number
+              v-model="form.runtime.maxSeqLen"
+              :min="512"
+              :max="131072"
+              :step="1024"
+              controls-position="right"
+            />
+            <el-tag v-if="datasetRecommendLoading" size="mini" type="info" class="recommend-tag">
+              <i class="el-icon-loading" />
+              {{ $t('eval.submit.runtime.analyzing') }}
+            </el-tag>
+            <el-tag v-else-if="datasetRecommended" size="mini" type="success" class="recommend-tag">
+              <i class="el-icon-magic-stick" />
+              {{ $t('eval.submit.runtime.recommended') }}
+            </el-tag>
+            <div class="field-hint">{{ $t('eval.submit.runtime.maxSeqLenTip') }}</div>
+          </el-form-item>
+          <el-form-item :label="$t('eval.submit.runtime.maxOutLen')">
+            <el-input-number
+              v-model="form.runtime.maxOutLen"
+              :min="64"
+              :max="16384"
+              :step="128"
+              controls-position="right"
+            />
+            <el-tag v-if="datasetRecommendLoading" size="mini" type="info" class="recommend-tag">
+              <i class="el-icon-loading" />
+              {{ $t('eval.submit.runtime.analyzing') }}
+            </el-tag>
+            <el-tag v-else-if="datasetRecommended" size="mini" type="success" class="recommend-tag">
+              <i class="el-icon-magic-stick" />
+              {{ $t('eval.submit.runtime.recommended') }}
+            </el-tag>
+            <div class="field-hint">{{ $t('eval.submit.runtime.maxOutLenTip') }}</div>
+          </el-form-item>
         </div>
       </el-card>
 
@@ -297,7 +349,7 @@ import KeyValueEditor from "@/components/KeyValueEditor.vue";
 
 import { createEvalTask } from "@/api/eval-task";
 import { listModels } from "@/api/model";
-import { listDatasets } from "@/api/dataset";
+import { listDatasets, previewDataset } from "@/api/dataset";
 
 const buildInitialForm = () => ({
   taskName: "",
@@ -314,11 +366,14 @@ const buildInitialForm = () => ({
   datasetId: null,
   datasetType: "opencompass_demo",
   datasetName: "",
+  evaluatorType: "rouge",
   params: {},
   runtime: {
     timeoutSeconds: 1800,
     maxWorkers: 4,
-    keepRawOutputs: true
+    keepRawOutputs: true,
+    maxSeqLen: 16384,
+    maxOutLen: 1024
   }
 });
 
@@ -332,6 +387,8 @@ export default {
       modelPresets: [],
       datasets: [],
       datasetsLoading: false,
+      datasetRecommendLoading: false,
+      datasetRecommended: false,
       form: buildInitialForm()
     };
   },
@@ -372,6 +429,17 @@ export default {
         return ds.inferenceMode === "ppl";
       }
       return false;
+    },
+    evaluatorOptions() {
+      const t = (k) => this.$t(`eval.submit.evaluator.${k}`);
+      return [
+        { value: "rouge", label: t("rouge"), desc: t("rougeDesc") },
+        { value: "keyword_match", label: t("keyword_match"), desc: t("keywordMatchDesc") },
+        { value: "accuracy", label: t("accuracy"), desc: t("accuracyDesc") },
+        { value: "em", label: t("em"), desc: t("emDesc") },
+        { value: "bleu", label: t("bleu"), desc: t("bleuDesc") },
+        { value: "jieba_rouge", label: t("jieba_rouge"), desc: t("jiebaRougeDesc") },
+      ];
     }
   },
   watch: {
@@ -471,6 +539,94 @@ export default {
       if (!target) return;
       this.form.datasetType = target.type || "opencompass_demo";
       this.form.datasetName = target.code;
+      this.analyzeDatasetForParams(datasetId);
+    },
+    /**
+     * 采样数据集并智能推荐 max_seq_len / max_out_len
+     * 使用字符数/3 粗略估算 token 数（中英混合场景）
+     */
+    async analyzeDatasetForParams(datasetId) {
+      this.datasetRecommendLoading = true;
+      this.datasetRecommended = false;
+      try {
+        const result = await previewDataset(datasetId, 50);
+        const rows = result?.rows || [];
+        if (!rows.length) return;
+
+        // 输入字段（按优先级）
+        const inputFieldNames = ['question', 'query', 'input', 'prompt', 'text', 'context', 'instruction'];
+        // 输出字段（按优先级）
+        const outputFieldNames = ['answer', 'reference_answer', 'output', 'label', 'target', 'completion'];
+
+        // 寻找第一个存在的字段
+        const findField = (candidates) => {
+          for (const name of candidates) {
+            if (rows.some(r => r[name] !== undefined && r[name] !== null)) {
+              return name;
+            }
+          }
+          return null;
+        };
+
+        const inputField = findField(inputFieldNames);
+        const outputField = findField(outputFieldNames);
+
+        // 估算字符数对应的 token 数（粗略：3字符 ≈ 1 token）
+        const estimateTokens = (text) => {
+          if (text == null) return 0;
+          if (typeof text !== 'string') {
+            text = JSON.stringify(text);
+          }
+          return Math.ceil(text.length / 3);
+        };
+
+        // 收集输入输出长度
+        const inputLengths = [];
+        const outputLengths = [];
+
+        for (const row of rows) {
+          if (inputField && row[inputField] != null) {
+            inputLengths.push(estimateTokens(row[inputField]));
+          }
+          if (outputField && row[outputField] != null) {
+            outputLengths.push(estimateTokens(row[outputField]));
+          }
+        }
+
+        // 计算 95 分位数
+        const percentile95 = (arr) => {
+          if (!arr.length) return 0;
+          const sorted = [...arr].sort((a, b) => a - b);
+          const idx = Math.floor(sorted.length * 0.95);
+          return sorted[Math.min(idx, sorted.length - 1)];
+        };
+
+        // 向上取整到合适的边界
+        const ceilToBoundary = (val, boundary, minVal) => {
+          if (val <= minVal) return minVal;
+          return Math.ceil(val / boundary) * boundary;
+        };
+
+        const inputP95 = percentile95(inputLengths);
+        const outputP95 = percentile95(outputLengths);
+
+        // max_seq_len: 向上取整到 1024，最小 4096
+        const recommendedSeqLen = ceilToBoundary(Math.ceil(inputP95 * 1.2), 1024, 4096);
+        // max_out_len: 向上取整到 128，最小 256
+        const recommendedOutLen = ceilToBoundary(Math.ceil(outputP95 * 1.2), 128, 256);
+
+        // 更新表单
+        this.form.runtime.maxSeqLen = recommendedSeqLen;
+        this.form.runtime.maxOutLen = recommendedOutLen;
+        this.datasetRecommended = true;
+
+        console.log(`[智能推荐] 采样 ${rows.length} 条, 输入P95=${inputP95}tokens, 输出P95=${outputP95}tokens → max_seq_len=${recommendedSeqLen}, max_out_len=${recommendedOutLen}`);
+      } catch (e) {
+        console.warn('智能推荐参数失败:', e);
+        // 失败时保持默认值不变
+      } finally {
+        this.datasetRecommendLoading = false;
+      }
     },
     onModelPresetChange() {
       this.$refs.form?.clearValidate(["modelPresetId"]);
@@ -487,8 +643,17 @@ export default {
         datasetId: this.form.datasetId,
         datasetType: dataset?.type || this.form.datasetType,
         datasetName: dataset?.code || this.form.datasetName,
-        params: this.form.params || {},
-        runtime: { ...this.form.runtime }
+        evaluatorType: this.form.evaluatorType || "rouge",
+        params: {
+          ...(this.form.params || {}),
+          max_seq_len: String(this.form.runtime.maxSeqLen || 16384),
+          max_out_len: String(this.form.runtime.maxOutLen || 1024)
+        },
+        runtime: {
+          timeoutSeconds: this.form.runtime.timeoutSeconds,
+          maxWorkers: this.form.runtime.maxWorkers,
+          keepRawOutputs: this.form.runtime.keepRawOutputs
+        }
       };
       if (this.form.modelMode === "preset" && this.form.modelPresetId) {
         payload.modelPresetId = this.form.modelPresetId;
@@ -628,8 +793,35 @@ export default {
   vertical-align: middle;
 }
 .model-source-hint {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.4;
   margin: 0;
   line-height: 1.5;
   max-width: 720px;
+}
+.field-hint {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.recommend-tag {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.recommend-tag i {
+  margin-right: 4px;
+}
+.evaluator-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.evaluator-option-desc {
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.3;
 }
 </style>

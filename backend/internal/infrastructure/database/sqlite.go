@@ -53,6 +53,18 @@ func Migrate(db *sql.DB, migrationPath string) error {
 	if err := ensureColumn(db, "datasets", "inference_mode", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
+	if err := ensureColumn(db, "datasets", "hf_repo", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "datasets", "hf_subset", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "datasets", "local_path", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "datasets", "file_format", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
 	if err := ensureColumn(db, "eval_tasks", "task_name", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}

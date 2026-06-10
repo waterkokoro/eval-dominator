@@ -20,8 +20,8 @@ func NewDatasetRepository(db *sql.DB) *DatasetRepository {
 func (r *DatasetRepository) Create(ctx context.Context, dataset domain.Dataset) (*domain.Dataset, error) {
 	res, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO datasets (code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO datasets (code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json, hf_repo, hf_subset, local_path, file_format)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		dataset.Code,
 		dataset.DisplayName,
 		dataset.Description,
@@ -32,6 +32,10 @@ func (r *DatasetRepository) Create(ctx context.Context, dataset domain.Dataset) 
 		dataset.InferenceMode,
 		dataset.ConfigPath,
 		nullableJSON(dataset.ExtraJSON),
+		dataset.HuggingFaceRepo,
+		dataset.HuggingFaceSubset,
+		dataset.LocalPath,
+		dataset.FileFormat,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("创建 Dataset 失败: %w", err)
@@ -48,7 +52,7 @@ func (r *DatasetRepository) Update(ctx context.Context, id int64, dataset domain
 	_, err := r.db.ExecContext(
 		ctx,
 		`UPDATE datasets
-		SET display_name = ?, description = ?, type = ?, sample_count = ?, enabled = ?, inference_mode = ?, config_path = ?, extra_json = ?, updated_at = ?
+		SET display_name = ?, description = ?, type = ?, sample_count = ?, enabled = ?, inference_mode = ?, config_path = ?, extra_json = ?, hf_repo = ?, hf_subset = ?, local_path = ?, file_format = ?, updated_at = ?
 		WHERE id = ?`,
 		dataset.DisplayName,
 		dataset.Description,
@@ -58,6 +62,10 @@ func (r *DatasetRepository) Update(ctx context.Context, id int64, dataset domain
 		dataset.InferenceMode,
 		dataset.ConfigPath,
 		nullableJSON(dataset.ExtraJSON),
+		dataset.HuggingFaceRepo,
+		dataset.HuggingFaceSubset,
+		dataset.LocalPath,
+		dataset.FileFormat,
 		now,
 		id,
 	)
@@ -99,7 +107,7 @@ func (r *DatasetRepository) Delete(ctx context.Context, id int64) error {
 func (r *DatasetRepository) GetByID(ctx context.Context, id int64) (*domain.Dataset, error) {
 	row := r.db.QueryRowContext(
 		ctx,
-		`SELECT id, code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json, created_at, updated_at
+		`SELECT id, code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json, hf_repo, hf_subset, local_path, file_format, created_at, updated_at
 		FROM datasets WHERE id = ?`,
 		id,
 	)
@@ -109,7 +117,7 @@ func (r *DatasetRepository) GetByID(ctx context.Context, id int64) (*domain.Data
 func (r *DatasetRepository) GetByCode(ctx context.Context, code string) (*domain.Dataset, error) {
 	row := r.db.QueryRowContext(
 		ctx,
-		`SELECT id, code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json, created_at, updated_at
+		`SELECT id, code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json, hf_repo, hf_subset, local_path, file_format, created_at, updated_at
 		FROM datasets WHERE code = ?`,
 		code,
 	)
@@ -117,7 +125,7 @@ func (r *DatasetRepository) GetByCode(ctx context.Context, code string) (*domain
 }
 
 func (r *DatasetRepository) List(ctx context.Context, includeDisabled bool) ([]domain.Dataset, error) {
-	query := `SELECT id, code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json, created_at, updated_at
+	query := `SELECT id, code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json, hf_repo, hf_subset, local_path, file_format, created_at, updated_at
 		FROM datasets`
 	if !includeDisabled {
 		query += " WHERE enabled = 1"
@@ -169,6 +177,59 @@ func (r *DatasetRepository) UpsertBuiltin(ctx context.Context, dataset domain.Da
 	return nil
 }
 
+// UpsertHuggingFace 插入或更新 HuggingFace 数据集。已存在时更新 local_path、sample_count 等。
+func (r *DatasetRepository) UpsertHuggingFace(ctx context.Context, dataset domain.Dataset) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO datasets (code, display_name, description, type, source, sample_count, enabled, inference_mode, config_path, extra_json, hf_repo, hf_subset, local_path, file_format)
+		VALUES (?, ?, ?, ?, 'huggingface', ?, 1, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(code) DO UPDATE SET
+			display_name = excluded.display_name,
+			description = excluded.description,
+			sample_count = excluded.sample_count,
+			local_path = excluded.local_path,
+			file_format = excluded.file_format,
+			hf_repo = excluded.hf_repo,
+			hf_subset = excluded.hf_subset,
+			config_path = excluded.config_path,
+			updated_at = CURRENT_TIMESTAMP`,
+		dataset.Code,
+		dataset.DisplayName,
+		dataset.Description,
+		dataset.Type,
+		dataset.SampleCount,
+		dataset.InferenceMode,
+		dataset.ConfigPath,
+		nullableJSON(dataset.ExtraJSON),
+		dataset.HuggingFaceRepo,
+		dataset.HuggingFaceSubset,
+		dataset.LocalPath,
+		dataset.FileFormat,
+	)
+	if err != nil {
+		return fmt.Errorf("Upsert HuggingFace Dataset 失败: %w", err)
+	}
+	return nil
+}
+
+// ListHuggingFaceRepos 返回已拉取的 HuggingFace 数据集仓库 ID 列表。
+func (r *DatasetRepository) ListHuggingFaceRepos(ctx context.Context) ([]string, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT hf_repo FROM datasets WHERE source = 'huggingface' AND hf_repo != ''`)
+	if err != nil {
+		return nil, fmt.Errorf("查询 HuggingFace repos 失败: %w", err)
+	}
+	defer rows.Close()
+	var repos []string
+	for rows.Next() {
+		var repo string
+		if err := rows.Scan(&repo); err != nil {
+			continue
+		}
+		repos = append(repos, repo)
+	}
+	return repos, nil
+}
+
 func scanDataset(row *sql.Row) (*domain.Dataset, error) {
 	var ds domain.Dataset
 	var source string
@@ -185,6 +246,10 @@ func scanDataset(row *sql.Row) (*domain.Dataset, error) {
 		&ds.InferenceMode,
 		&ds.ConfigPath,
 		&ds.ExtraJSON,
+		&ds.HuggingFaceRepo,
+		&ds.HuggingFaceSubset,
+		&ds.LocalPath,
+		&ds.FileFormat,
 		&ds.CreatedAt,
 		&ds.UpdatedAt,
 	); err != nil {
@@ -213,6 +278,10 @@ func scanRowsInto(rows *sql.Rows, ds *domain.Dataset) error {
 		&ds.InferenceMode,
 		&ds.ConfigPath,
 		&ds.ExtraJSON,
+		&ds.HuggingFaceRepo,
+		&ds.HuggingFaceSubset,
+		&ds.LocalPath,
+		&ds.FileFormat,
 		&ds.CreatedAt,
 		&ds.UpdatedAt,
 	); err != nil {

@@ -29,7 +29,13 @@ type createEvalTaskRequest struct {
 	SaveModel     bool              `json:"saveModel"`
 	DatasetType   string            `json:"datasetType"`
 	DatasetName   string            `json:"datasetName"`
+	EvaluatorType string            `json:"evaluatorType"` // rouge / accuracy / keyword_match / em / bleu / jieba_rouge
 	Params        map[string]string `json:"params"`
+	Runtime       *struct {
+		TimeoutSeconds int  `json:"timeoutSeconds"`
+		MaxWorkers     int  `json:"maxWorkers"`
+		KeepRawOutputs bool `json:"keepRawOutputs"`
+	} `json:"runtime"`
 }
 
 func NewEvalHandler(evalService *application.EvalService) *EvalHandler {
@@ -56,8 +62,10 @@ func (h *EvalHandler) CreateTask(ctx *gin.Context) {
 		ModelPresetID: req.ModelPresetID,
 		DatasetType:   req.DatasetType,
 		DatasetName:   req.DatasetName,
+		EvaluatorType: req.EvaluatorType,
 		SaveModel:     req.SaveModel,
 		Params:        req.Params,
+		Runtime:       toRuntimeInput(req.Runtime),
 	})
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"code": "CREATE_EVAL_TASK_FAILED", "message": err.Error()})
@@ -76,7 +84,8 @@ func (h *EvalHandler) GetTask(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{"code": "EVAL_TASK_NOT_FOUND", "message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, toEvalTaskItem(*task))
+	progress, progressText, runningPhase := h.evalService.GetTaskProgress(ctx.Request.Context(), task.ID)
+	ctx.JSON(http.StatusOK, toEvalTaskItemWithProgress(*task, progress, progressText, runningPhase))
 }
 
 func (h *EvalHandler) GetResult(ctx *gin.Context) {
@@ -149,12 +158,31 @@ func (h *EvalHandler) ListTasks(ctx *gin.Context) {
 
 func (h *EvalHandler) GetTaskLog(ctx *gin.Context) {
 	tail, _ := strconv.Atoi(ctx.DefaultQuery("tail", "200"))
-	content, err := h.evalService.GetTaskLog(ctx.Request.Context(), ctx.Param("evalTaskId"), tail)
+	logID := strings.TrimSpace(ctx.Query("logId"))
+	content, err := h.evalService.GetTaskLog(ctx.Request.Context(), ctx.Param("evalTaskId"), logID, tail)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"code": "READ_LOG_FAILED", "message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"content": content, "tail": tail})
+	ctx.JSON(http.StatusOK, gin.H{"content": content, "tail": tail, "logId": logID})
+}
+
+// ListTaskLogs GET /eval/tasks/:id/logs
+// 列举该任务全部可用日志文件，前端用于渲染左侧日志菜单。
+func (h *EvalHandler) ListTaskLogs(ctx *gin.Context) {
+	logs := h.evalService.ListTaskLogs(ctx.Request.Context(), ctx.Param("evalTaskId"))
+	// 不返回绝对路径给前端，避免泄露服务器目录
+	items := make([]map[string]interface{}, 0, len(logs))
+	for _, lg := range logs {
+		items = append(items, map[string]interface{}{
+			"id":          lg.ID,
+			"displayName": lg.DisplayName,
+			"type":        lg.Type,
+			"mtime":       lg.ModTime,
+			"size":        lg.Size,
+		})
+	}
+	ctx.JSON(http.StatusOK, gin.H{"items": items})
 }
 
 // CancelTask POST /eval/tasks/:id/cancel
@@ -165,6 +193,29 @@ func (h *EvalHandler) CancelTask(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// RerunEvaluateNode POST /eval/tasks/:id/rerun-eval
+// 仅重跑 evaluate 节点（复用旧的 predictions），不重新调用 LLM。
+func (h *EvalHandler) RerunEvaluateNode(ctx *gin.Context) {
+	userID := ctx.GetInt64(middleware.UserIDKey)
+	if err := h.evalService.RerunEvaluateNode(ctx.Request.Context(), ctx.Param("evalTaskId"), userID); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"code": "RERUN_EVAL_FAILED", "message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// GetAnalysis GET /eval/tasks/:id/analysis
+// 返回该任务的逐题分析数据（prompt / prediction / 关键词命中 / 评分等）。
+func (h *EvalHandler) GetAnalysis(ctx *gin.Context) {
+	userID := ctx.GetInt64(middleware.UserIDKey)
+	data, err := h.evalService.GetAnalysis(ctx.Request.Context(), ctx.Param("evalTaskId"), userID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"code": "ANALYSIS_NOT_AVAILABLE", "message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, data)
 }
 
 // PreviewArtifact GET /eval/tasks/:id/artifacts/preview?path=...
@@ -226,4 +277,21 @@ func parseDateEndLocal(s string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, t.Location()), true
+}
+
+// toRuntimeInput 将前端传来的 runtime 参数转换为 application 层结构。
+func toRuntimeInput(r *struct {
+	TimeoutSeconds int  `json:"timeoutSeconds"`
+	MaxWorkers     int  `json:"maxWorkers"`
+	KeepRawOutputs bool `json:"keepRawOutputs"`
+}) application.RuntimeInput {
+	if r == nil {
+		return application.RuntimeInput{}
+	}
+	return application.RuntimeInput{
+		TimeoutSeconds: r.TimeoutSeconds,
+		MaxWorkers:     r.MaxWorkers,
+		KeepRawOutputs: r.KeepRawOutputs,
+		HasValues:      true,
+	}
 }

@@ -56,6 +56,7 @@ class EvalService(eval_service_pb2_grpc.EvalServiceServicer):
             config=request.config,
             config_path=request.config_path,
             output_dir=request.output_dir,
+            reuse_timestamp=request.reuse_timestamp,
         )
         return eval_service_pb2.ExecuteEvalResponse(
             ok=result.ok,
@@ -82,6 +83,32 @@ class EvalService(eval_service_pb2_grpc.EvalServiceServicer):
     def CancelEval(self, request, context):
         running = self._adapter.cancel_eval(request.eval_task_id)
         return eval_service_pb2.CancelEvalResponse(ok=True, running=running)
+
+    def PullHuggingFaceDataset(self, request, context):
+        result = self._adapter.pull_huggingface_dataset(
+            repo=request.repo,
+            subset=request.subset,
+            split=request.split,
+            cache_dir=request.cache_dir,
+        )
+        return eval_service_pb2.PullHuggingFaceDatasetResponse(
+            ok=result.ok,
+            local_path=result.local_path,
+            sample_count=result.sample_count,
+            error=_to_error_pb(result.error),
+        )
+
+    def PrepareCustomDataset(self, request, context):
+        result = self._adapter.prepare_custom_dataset(
+            local_path=request.local_path,
+            task_type=request.task_type,
+        )
+        return eval_service_pb2.PrepareCustomDatasetResponse(
+            ok=result.ok,
+            config_path=result.config_path,
+            sample_count=result.sample_count,
+            error=_to_error_pb(result.error),
+        )
 
 
 def _to_artifact_pb(artifact: ArtifactRef):

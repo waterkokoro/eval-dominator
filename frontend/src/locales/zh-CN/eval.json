@@ -52,10 +52,16 @@
     "tabs": {
       "overview": "概览",
       "metrics": "评测指标",
+      "analysis": "具体分析",
       "artifacts": "产物",
       "log": "日志"
     },
     "overview": {
+      "sectionTask": "任务信息",
+      "sectionModel": "模型配置",
+      "sectionDataset": "数据集",
+      "sectionTimeline": "时间线",
+      "sectionError": "错误信息",
       "taskName": "任务名称",
       "taskId": "任务 ID",
       "status": "状态",
@@ -73,7 +79,13 @@
     "cancelConfirmContent": "确定要终止该评测任务吗？已经产生的部分产物会保留，但不会继续推理后续数据集。",
     "cancelConfirmOk": "确定终止",
     "cancelConfirmCancel": "取消",
-    "cancelRequested": "已请求终止"
+    "cancelRequested": "已请求终止",
+    "rerunEval": "仅重跑评测汇总",
+    "rerunEvalConfirmTitle": "仅重跑评测汇总节点",
+    "rerunEvalConfirmContent": "将复用上次推理产生的 predictions\n仅重新执行 OpenCompass 的 evaluate 阶段，不会再调用模型 API。",
+    "rerunEvalConfirmHint": "适用场景：评测进度成功但「完成」节点失败、或者修复了 evaluator 之后想用新规则重新评分。",
+    "rerunEvalConfirmOk": "确定重跑",
+    "rerunEvalRequested": "已请求仅重跑评测汇总节点"
   },
   "submit": {
     "title": "提交评测",
@@ -151,10 +163,32 @@
       "params": "附加参数",
       "datasetRequired": "请选择数据集"
     },
+    "evaluator": {
+      "label": "评分方式",
+      "desc": "决定如何将模型输出与参考答案进行对比评分",
+      "rouge": "ROUGE 文本相似度",
+      "rougeDesc": "适用于开放式问答、摘要生成等场景",
+      "accuracy": "准确率 Accuracy",
+      "accuracyDesc": "适用于选择题、文本分类等精确匹配场景",
+      "em": "精确匹配 EM",
+      "emDesc": "要求模型输出与参考答案完全一致",
+      "keyword_match": "关键词命中率",
+      "keywordMatchDesc": "检测模型输出是否包含期望的关键词，适合 Agent 工具调用评测",
+      "bleu": "BLEU 翻译指标",
+      "bleuDesc": "适用于机器翻译等场景",
+      "jieba_rouge": "中文 ROUGE（jieba 分词）",
+      "jiebaRougeDesc": "针对中文文本的 ROUGE 评分，使用 jieba 分词"
+    },
     "runtime": {
       "timeout": "超时（秒）",
       "maxWorkers": "最大并发",
-      "keepRawOutputs": "保留原始输出"
+      "keepRawOutputs": "保留原始输出",
+      "maxSeqLen": "最大输入长度",
+      "maxSeqLenTip": "模型单次请求的最大 token 数。默认 16384，若模型上下文窗口较小可调低",
+      "maxOutLen": "最大输出长度",
+      "maxOutLenTip": "模型单次生成的最大 token 数。默认 1024",
+      "analyzing": "分析中...",
+      "recommended": "智能推荐"
     },
     "footer": {
       "reset": "重置",
@@ -173,6 +207,13 @@
     "timeout": "执行超时",
     "cancelled": "已终止",
     "unknown": "未知状态"
+  },
+  "steps": {
+    "prepare": "准备",
+    "build": "构建",
+    "infer": "推理进度",
+    "evaluate": "评测进度",
+    "finish": "完成"
   },
   "metrics": {
     "summary": {
@@ -234,14 +275,55 @@
       "downloadFailed": "下载失败"
     }
   },
+  "analysis": {
+    "unavailableTitle": "暂无具体分析数据",
+    "unavailableDescription": "任务尚未生成预测/结果产物，或解析失败。",
+    "searchPlaceholder": "在题目、模型输出或参考答案中搜索",
+    "hidePass": "隐藏合格题目",
+    "showingCount": "显示 {count} / {total} 题",
+    "scoreFailed": "调用失败",
+    "summary": {
+      "total": "总题数"
+    },
+    "categories": {
+      "failed": "调用失败",
+      "low": "得分较低",
+      "mid": "勉强通过",
+      "pass": "合格 / 优秀"
+    },
+    "ranges": {
+      "failed": "Agent / API 报错",
+      "low": "命中率 0-30%",
+      "mid": "命中率 30-80%",
+      "pass": "命中率 ≥ 80%"
+    },
+    "fields": {
+      "prompt": "题目 / 输入",
+      "prediction": "模型输出",
+      "reference": "参考答案 / 期望关键词"
+    },
+    "empty": {
+      "title": "没有匹配的题目",
+      "description": "请调整筛选条件或搜索关键词",
+      "waitDescription": "任务执行成功后会展示逐题分析"
+    }
+  },
   "log": {
     "tail": "最近 {count} 行日志",
     "autoRefresh": "自动刷新",
+    "autoSelectLatest": "自动选最新",
     "refresh": "刷新日志",
     "unavailable": "日志暂不可用",
     "empty": "暂无日志",
     "emptyDescription": "任务开始执行后，OpenCompass 主日志会写入并显示在此",
     "emptyContent": "暂无日志内容",
-    "loadFailed": "拉取日志失败"
+    "loadFailed": "拉取日志失败",
+    "noLogFiles": "暂无日志文件",
+    "groups": {
+      "main": "主日志",
+      "infer": "推理日志",
+      "eval": "评测日志",
+      "system": "系统日志"
+    }
   }
 }
