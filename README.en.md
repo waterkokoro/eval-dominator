@@ -105,14 +105,23 @@ flowchart LR
 
 ## v0.2.0 Highlights
 
+### Agent Tool-Calling Evaluation (Out of the Box)
+An end-to-end evaluation workflow purpose-built for Agent / Function Calling scenarios:
+- **Keyword Match Evaluator**: A built-in `KeywordMatchEvaluator` that scores whether the Agent output contains the expected tool names, parameters, and key actions — not traditional text similarity, but semantic-aware keyword hit rate.
+- **Custom Agent Eval Datasets**: Import Agent evaluation datasets from local JSONL with zero Python code. Each sample contains a user instruction (prompt) and a list of expected keywords (reference).
+- **Per-Question Hit Analysis**: After evaluation, every Agent call is automatically decomposed — hit keywords (green) and missed keywords (red) are visualized per sample, classified into tiers (call failed / 0-30% low / 30-80% marginal / 80%+ pass) to quickly surface the Agent's blind spots.
+- **One-Click Rerun**: Adjust keyword weights or evaluation parameters, then re-score using existing predictions without re-invoking the LLM.
+
+> Typical scenario: Evaluate whether an Agent, given the instruction "help me trigger a release", produces output containing expected keywords like `trigger_release`, `project_id`, `git_branch`.
+
 ### One-Click HuggingFace Dataset Import
 Search HuggingFace datasets directly from the Dataset Center, filter by scenario category or trending popularity. Search results show real-time pull status (pulled / not pulled) with one-click pull and repull buttons. Pulled datasets are auto-registered with sample count and subset info. Offline-mode safe — falls back to local cache when network is unavailable.
 
 ### 6 Built-in Evaluators with Frontend Picker
-No longer limited to OpenCompass defaults — pick from ROUGE, keyword match rate, Accuracy, Exact Match (EM), BLEU, and Chinese ROUGE (jieba tokenization) via a frontend dropdown. The evaluator type is passed through the backend and dynamically injected as a template on the Core side. Fully backward-compatible. Especially useful for Agent tool-calling evaluation with the keyword match evaluator.
+No longer limited to OpenCompass defaults — pick from ROUGE, keyword match rate, Accuracy, Exact Match (EM), BLEU, and Chinese ROUGE (jieba tokenization) via a frontend dropdown. The evaluator type is passed through the backend and dynamically injected as a template on the Core side. Fully backward-compatible. The **keyword match** evaluator is specifically designed for Agent tool-calling scenarios, scoring by substring hit rate against expected keywords — a perfect fit for Function Calling output evaluation.
 
 ### Per-Question Deep Analysis
-A new "Detailed Analysis" tab appears after task completion: automatically parses every sample's prompt, model output, and reference answer, scores by keyword hit rate and classifies into four tiers (call failed / low score / marginally passed / pass), with a "hide passed" filter to quickly surface weak spots. Each sample is expandable to show full input/output and hit/missed keywords.
+A new "Detailed Analysis" tab appears after task completion: automatically parses every sample's prompt, model output, and reference answer, scores by keyword hit rate and classifies into four tiers (call failed / low score / marginally passed / pass), with a "hide passed" filter to quickly surface weak spots. In Agent evaluation scenarios, each sample is expandable to show the full user instruction, Agent output, expected keyword list, and per-keyword hit/miss results.
 
 ### Evaluation-Node-Only Rerun
 No need to re-invoke the LLM — the "Rerun Evaluation Summary" feature reuses existing prediction artifacts and only re-runs the evaluate stage. Swap evaluators or tweak parameters to get fresh results fast, without burning API credits.
