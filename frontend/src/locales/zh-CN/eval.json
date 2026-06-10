@@ -99,7 +99,8 @@
     },
     "task": {
       "name": "任务名称",
-      "namePlaceholder": "可选，用于列表搜索与识别；不填则仅显示短任务 ID"
+      "namePlaceholder": "可选，用于列表搜索与识别；不填则仅显示短任务 ID",
+      "rerunFromHint": "基于任务「{name}」再次评测，名称已自动递增"
     },
     "model": {
       "source": "模型来源",

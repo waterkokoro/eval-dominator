@@ -372,9 +372,13 @@ export default {
       this.$router.push({
         name: "eval-submit",
         query: {
+          rerunFrom: this.task.evalTaskId,
+          taskName: this.task.taskName || "",
           provider: this.task.modelProvider,
           modelName: this.task.modelName,
           baseUrl: this.task.modelBaseUrl,
+          modelPresetId: this.task.modelPresetId || 0,
+          evaluatorType: this.task.evaluatorType || "",
           datasetType: this.task.datasetType,
           datasetName: this.task.datasetName
         }

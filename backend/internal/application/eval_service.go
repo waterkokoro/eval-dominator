@@ -157,6 +157,8 @@ func (s *EvalService) CreateTask(ctx context.Context, input CreateEvalTaskInput)
 		ModelProvider: input.Provider,
 		ModelName:     input.ModelName,
 		ModelBaseURL:  input.BaseURL,
+		ModelPresetID: input.ModelPresetID,
+		EvaluatorType: input.EvaluatorType,
 		DatasetType:   input.DatasetType,
 		DatasetName:   input.DatasetName,
 		Status:        domain.EvalTaskStatusPending,

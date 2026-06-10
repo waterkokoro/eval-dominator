@@ -31,6 +31,10 @@
             clearable
             :placeholder="$t('eval.submit.task.namePlaceholder')"
           />
+          <div v-if="rerunFromTaskName" class="rerun-task-hint">
+            <i class="el-icon-info" />
+            {{ $t('eval.submit.task.rerunFromHint', { name: rerunFromTaskName }) }}
+          </div>
         </el-form-item>
       </el-card>
 
@@ -389,6 +393,8 @@ export default {
       datasetsLoading: false,
       datasetRecommendLoading: false,
       datasetRecommended: false,
+      modelPresetsLoaded: false,
+      rerunFromTaskName: "",
       form: buildInitialForm()
     };
   },
@@ -489,9 +495,38 @@ export default {
     applyPrefill() {
       const prefill = this.$route.query;
       if (!prefill) return;
-      if (prefill.provider) this.form.provider = prefill.provider;
-      if (prefill.modelName) this.form.modelName = prefill.modelName;
-      if (prefill.baseUrl) this.form.baseUrl = prefill.baseUrl;
+
+      // 模型配置：根据 modelPresetId 或 provider+modelName+baseUrl 决定使用预设还是手动填写
+      const presetId = Number(prefill.modelPresetId) || 0;
+      const hasPresetHint = presetId > 0 || (prefill.provider && prefill.modelName);
+
+      if (hasPresetHint) {
+        // 等待 modelPresets 加载完成后匹配
+        const tryApply = () => {
+          if (!this.modelPresetsLoaded) {
+            // 预设列表尚未加载，等待后重试
+            const unwatch = this.$watch(
+              () => this.modelPresetsLoaded,
+              (loaded) => {
+                if (loaded) {
+                  unwatch();
+                  this.doApplyModelPrefill(prefill, presetId);
+                }
+              }
+            );
+            return;
+          }
+          this.doApplyModelPrefill(prefill, presetId);
+        };
+        tryApply();
+      }
+
+      // Evaluator 类型
+      if (prefill.evaluatorType) {
+        this.form.evaluatorType = prefill.evaluatorType;
+      }
+
+      // 数据集
       if (prefill.datasetName) {
         const target = this.datasets.find((d) => d.code === prefill.datasetName);
         if (target && this.datasetMatchesEvalModelKind(target)) {
@@ -501,6 +536,88 @@ export default {
           this.$message.warning(this.$t("eval.submit.dataset.incompatibleSkip"));
         }
       }
+
+      // 任务名称：自动递增序号
+      if (prefill.taskName) {
+        this.rerunFromTaskName = prefill.taskName;
+        this.form.taskName = this.incrementTaskName(prefill.taskName);
+      }
+    },
+    /**
+     * 尝试按 modelPresetId 精确匹配预设；若未命中（如老任务 presetId=0），
+     * 则按 provider + modelName + baseUrl 模糊匹配。都匹配不到时回退手动填写。
+     */
+    doApplyModelPrefill(prefill, presetId) {
+      // 1. 按 presetId 精确匹配
+      if (presetId > 0) {
+        const byId = this.modelPresets.find((p) => p.id === presetId);
+        if (byId) {
+          this.form.modelMode = "preset";
+          this.form.modelPresetId = presetId;
+          return;
+        }
+      }
+
+      // 2. 按 provider + modelName + baseUrl 模糊匹配（兼容老任务 presetId=0）
+      if (prefill.provider && prefill.modelName) {
+        const byFields = this.modelPresets.find((p) => {
+          const providerMatch = p.provider === prefill.provider;
+          const nameMatch = p.modelName === prefill.modelName;
+          const urlMatch = !prefill.baseUrl || p.baseUrl === prefill.baseUrl;
+          return providerMatch && nameMatch && urlMatch;
+        });
+        if (byFields) {
+          this.form.modelMode = "preset";
+          this.form.modelPresetId = byFields.id;
+          return;
+        }
+      }
+
+      // 3. 都匹配不到，回退手动填写
+      this.applyManualPrefill(prefill);
+    },
+    applyManualPrefill(prefill) {
+      this.form.modelMode = "manual";
+      if (prefill.provider) this.form.provider = prefill.provider;
+      if (prefill.modelName) this.form.modelName = prefill.modelName;
+      if (prefill.baseUrl) this.form.baseUrl = prefill.baseUrl;
+    },
+    /**
+     * 智能递增任务名称中的序号后缀。
+     * 支持格式：(1) （1） 【1】 [1] 「1」 {1} 以及 -1 _1 -01 -001 等。
+     * 如果没有任何序号模式，则在末尾追加 " 2"。
+     */
+    incrementTaskName(name) {
+      if (!name) return "";
+
+      // 括号类序号：(1) （1） 【1】 [1] 「1」 {1}
+      const bracketPatterns = [
+        { regex: /^(.*?)(\()(\d+)(\))$/, open: "(", close: ")" },
+        { regex: /^(.*?)(（)(\d+)(）)$/, open: "（", close: "）" },
+        { regex: /^(.*?)(【)(\d+)(】)$/, open: "【", close: "】" },
+        { regex: /^(.*?)(\[)(\d+)(\])$/, open: "[", close: "]" },
+        { regex: /^(.*?)(「)(\d+)(」)$/, open: "「", close: "」" },
+        { regex: /^(.*?)(\{)(\d+)(\})$/, open: "{", close: "}" },
+      ];
+      for (const { regex, open, close } of bracketPatterns) {
+        const m = name.match(regex);
+        if (m) {
+          const num = parseInt(m[3], 10);
+          const padded = m[3].length > 1 ? String(num + 1).padStart(m[3].length, "0") : String(num + 1);
+          return `${m[1]}${open}${padded}${close}`;
+        }
+      }
+
+      // 横线/下划线序号：xxx-1, xxx_1, xxx-01, xxx-001 等（末尾的数字）
+      const dashMatch = name.match(/^(.*?)([-_])(\d+)$/);
+      if (dashMatch) {
+        const num = parseInt(dashMatch[3], 10);
+        const padded = dashMatch[3].length > 1 ? String(num + 1).padStart(dashMatch[3].length, "0") : String(num + 1);
+        return `${dashMatch[1]}${dashMatch[2]}${padded}`;
+      }
+
+      // 没有任何序号模式，追加 " 2"
+      return `${name} 2`;
     },
     async loadModelPresets() {
       try {
@@ -508,6 +625,8 @@ export default {
         this.modelPresets = Array.isArray(list) ? list : list?.items || [];
       } catch (e) {
         this.modelPresets = [];
+      } finally {
+        this.modelPresetsLoaded = true;
       }
     },
     async loadDatasets() {
@@ -823,5 +942,19 @@ export default {
   font-size: 12px;
   color: #909399;
   line-height: 1.3;
+}
+
+.rerun-task-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #e6a23c;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.rerun-task-hint i {
+  font-size: 13px;
+  color: #e6a23c;
 }
 </style>

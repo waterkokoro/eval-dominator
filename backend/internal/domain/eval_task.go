@@ -23,6 +23,8 @@ type EvalTask struct {
 	ModelProvider string
 	ModelName     string
 	ModelBaseURL  string
+	ModelPresetID int64  // 创建时使用的预设 ID（0 表示手动填写）
+	EvaluatorType string // rouge / accuracy / keyword_match / em / bleu / jieba_rouge
 	DatasetType   string
 	DatasetName   string
 	Status        EvalTaskStatus

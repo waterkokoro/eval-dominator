@@ -99,7 +99,8 @@
     },
     "task": {
       "name": "Task name",
-      "namePlaceholder": "Optional. Used to search and identify; if empty, only the short task ID is shown."
+      "namePlaceholder": "Optional. Used to search and identify; if empty, only the short task ID is shown.",
+      "rerunFromHint": "Re-evaluating from task \"{name}\" — name auto-incremented"
     },
     "model": {
       "source": "Model source",

@@ -68,6 +68,12 @@ func Migrate(db *sql.DB, migrationPath string) error {
 	if err := ensureColumn(db, "eval_tasks", "task_name", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
+	if err := ensureColumn(db, "eval_tasks", "model_preset_id", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, "eval_tasks", "evaluator_type", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
 
 	return nil
 }

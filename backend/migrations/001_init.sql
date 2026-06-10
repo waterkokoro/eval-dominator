@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS eval_tasks (
     model_provider TEXT NOT NULL,
     model_name TEXT NOT NULL,
     model_base_url TEXT,
+    model_preset_id INTEGER NOT NULL DEFAULT 0,
+    evaluator_type TEXT NOT NULL DEFAULT '',
     dataset_type TEXT NOT NULL,
     dataset_name TEXT NOT NULL,
     status TEXT NOT NULL,

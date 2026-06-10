@@ -23,14 +23,17 @@ func (r *EvalTaskRepository) Create(ctx context.Context, task domain.EvalTask) e
 		ctx,
 		`INSERT INTO eval_tasks (
 			id, task_name, user_id, model_provider, model_name, model_base_url,
+			model_preset_id, evaluator_type,
 			dataset_type, dataset_name, status, output_dir, error_code, error_message
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		task.ID,
 		task.TaskName,
 		task.UserID,
 		task.ModelProvider,
 		task.ModelName,
 		task.ModelBaseURL,
+		task.ModelPresetID,
+		task.EvaluatorType,
 		task.DatasetType,
 		task.DatasetName,
 		string(task.Status),
@@ -81,6 +84,7 @@ func (r *EvalTaskRepository) GetByID(ctx context.Context, id string) (*domain.Ev
 	row := r.db.QueryRowContext(
 		ctx,
 		`SELECT id, task_name, user_id, model_provider, model_name, model_base_url,
+			COALESCE(model_preset_id, 0), COALESCE(evaluator_type, ''),
 			dataset_type, dataset_name, status, output_dir, error_code, error_message,
 			created_at, updated_at, started_at, finished_at
 		FROM eval_tasks WHERE id = ?`,
@@ -96,6 +100,8 @@ func (r *EvalTaskRepository) GetByID(ctx context.Context, id string) (*domain.Ev
 		&task.ModelProvider,
 		&task.ModelName,
 		&task.ModelBaseURL,
+		&task.ModelPresetID,
+		&task.EvaluatorType,
 		&task.DatasetType,
 		&task.DatasetName,
 		&status,
@@ -183,6 +189,7 @@ func (r *EvalTaskRepository) List(ctx context.Context, query domain.EvalTaskList
 	rows, err := r.db.QueryContext(
 		ctx,
 		fmt.Sprintf(`SELECT id, task_name, user_id, model_provider, model_name, model_base_url,
+			COALESCE(model_preset_id, 0), COALESCE(evaluator_type, ''),
 			dataset_type, dataset_name, status, output_dir, error_code, error_message,
 			created_at, updated_at, started_at, finished_at
 		FROM eval_tasks WHERE %s ORDER BY created_at DESC LIMIT ? OFFSET ?`, where),
@@ -204,6 +211,8 @@ func (r *EvalTaskRepository) List(ctx context.Context, query domain.EvalTaskList
 			&task.ModelProvider,
 			&task.ModelName,
 			&task.ModelBaseURL,
+			&task.ModelPresetID,
+			&task.EvaluatorType,
 			&task.DatasetType,
 			&task.DatasetName,
 			&status,

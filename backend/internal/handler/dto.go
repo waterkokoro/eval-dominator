@@ -15,6 +15,8 @@ type evalTaskItem struct {
 	ModelProvider string `json:"modelProvider"`
 	ModelName     string `json:"modelName"`
 	ModelBaseURL  string `json:"modelBaseUrl"`
+	ModelPresetID int64  `json:"modelPresetId"`
+	EvaluatorType string `json:"evaluatorType"`
 	DatasetType   string `json:"datasetType"`
 	DatasetName   string `json:"datasetName"`
 	Status        string `json:"status"`
@@ -37,6 +39,8 @@ func toEvalTaskItem(task domain.EvalTask) evalTaskItem {
 		ModelProvider: task.ModelProvider,
 		ModelName:     task.ModelName,
 		ModelBaseURL:  task.ModelBaseURL,
+		ModelPresetID: task.ModelPresetID,
+		EvaluatorType: task.EvaluatorType,
 		DatasetType:   task.DatasetType,
 		DatasetName:   task.DatasetName,
 		Status:        string(task.Status),
