@@ -6,7 +6,7 @@
 
 <p align="center">
   一个轻量、本地优先、面向 OpenAI 兼容接口的大模型评测平台<br/>
-  把 <a href="https://github.com/open-compass/opencompass">OpenCompass</a> 的能力包装成一个能用浏览器跑的小工具
+  内置 <b>Agent 工具调用评测</b> 能力，把 <a href="https://github.com/open-compass/opencompass">OpenCompass</a> 包装成浏览器可驱动的闭环系统
 </p>
 
 <p align="center">
@@ -105,14 +105,23 @@ flowchart LR
 
 ## v0.2.0 亮点功能
 
+### Agent 工具调用评测（开箱即用）
+专为 Agent / Function Calling 场景设计的端到端评测流程：
+- **关键词命中率 Evaluator**：内置 `KeywordMatchEvaluator`，针对 Agent 输出中是否正确包含预期的工具名、参数、关键动作进行逐词命中评分，而非传统的文本相似度对比。
+- **自定义 Agent 评测集**：支持从本地 JSONL 直接导入 Agent 评测数据集，每条样本包含用户指令（prompt）和预期关键词列表（reference），无需编写任何 Python 代码。
+- **逐题命中分析**：评测完成后自动拆解每条 Agent 调用，可视化展示命中关键词（绿色）和遗漏关键词（红色），按命中率分档（调用失败 / 0-30% 低分 / 30-80% 勉强通过 / 80%+ 合格），快速定位 Agent 的能力盲区。
+- **一键重跑评测**：换一组关键词权重或调整评测参数后，无需重新调用 LLM，直接复用已有 predictions 重新评分。
+
+> 典型场景：评测一个 Agent 在"帮我发起一次发布"这类指令下，输出是否包含了 `trigger_release`、`project_id`、`git_branch` 等预期关键词。
+
 ### HuggingFace 数据集一键导入
 在数据集中心直接搜索 HuggingFace 数据集，支持场景分类筛选和热门趋势浏览。搜索结果实时显示拉取状态（已拉取 / 未拉取），一键拉取、一键重新拉取。拉取后自动识别样本数、子集信息，离线环境下也能安全回退到本地缓存加载。
 
 ### 6 种内置 Evaluator 可切换
-提交评测时不再只能跑 OpenCompass 默认指标——前端下拉选择 ROUGE、关键词命中率、Accuracy、精确匹配 EM、BLEU、中文 ROUGE（jieba 分词）六种评测方式，后端透传、Core 动态注入对应 Evaluator 模板，完全向后兼容。特别适合 Agent 工具调用场景的关键词命中率评测。
+提交评测时不再只能跑 OpenCompass 默认指标——前端下拉选择 ROUGE、关键词命中率、Accuracy、精确匹配 EM、BLEU、中文 ROUGE（jieba 分词）六种评测方式，后端透传、Core 动态注入对应 Evaluator 模板，完全向后兼容。其中**关键词命中率**是专为 Agent 工具调用场景设计的评分器，按预期关键词的子串命中率打分，完美适配 Function Calling 输出评测。
 
 ### 逐题具体分析视图
-任务完成后新增「具体分析」Tab：自动解析每条样本的 prompt、模型输出、参考答案，按关键词命中率打分并分为四档（调用失败 / 得分较低 / 勉强通过 / 合格优秀），支持「隐藏合格题目」快速定位薄弱项。每条样本可展开查看完整的输入输出和命中/遗漏关键词。
+任务完成后新增「具体分析」Tab：自动解析每条样本的 prompt、模型输出、参考答案，按关键词命中率打分并分为四档（调用失败 / 得分较低 / 勉强通过 / 合格优秀），支持「隐藏合格题目」快速定位薄弱项。在 Agent 评测场景下，每条样本可展开查看完整的用户指令、Agent 输出、预期关键词列表以及逐词命中/遗漏结果。
 
 ### 仅重跑评测节点
 无需重新调 LLM 推理——「仅重跑评测汇总」功能复用已有的 predictions 产物，只重跑 evaluate 阶段。改个 Evaluator 或调个参数就能快速出新结果，大幅节省 API 调用成本和时间。
@@ -127,10 +136,11 @@ flowchart LR
 
 - ✅ 账号 + 密码（bcrypt）+ JWT 登录；首次启动 seed 默认账号 `admin / admin123`
 - ✅ OpenAI 兼容远程模型评测（DashScope / OpenAI / DeepSeek / 自部署 vLLM 等）
+- ✅ **Agent 工具调用评测**：内置关键词命中率 Evaluator + 逐题命中分析 + 自定义 JSONL 评测集导入
 - ✅ 模型预设（保存 / 复用 / 脱敏回显 API Key）
 - ✅ 数据集中心：内置 Demo 自动同步 + HuggingFace 搜索拉取 + 自定义 JSONL 导入
 - ✅ 数据集预览：支持 JSONL / CSV 在线预览，超宽数据集自动截列提示
-- ✅ 6 种内置 Evaluator 选择（ROUGE / 关键词命中率 / Accuracy / EM / BLEU / 中文 ROUGE）
+- ✅ 6 种内置 Evaluator 选择（ROUGE / **关键词命中率（Agent 专用）** / Accuracy / EM / BLEU / 中文 ROUGE）
 - ✅ 任务列表（搜索 / 时间筛选 / 多状态过滤）
 - ✅ 任务详情：卡片化概览、五阶段进度条、指标可视化（自动百分比识别）、产物在线预览 & 下载
 - ✅ 逐题具体分析：关键词命中/遗漏可视化、四档评分分级、快速定位薄弱项

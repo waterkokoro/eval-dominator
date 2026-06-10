@@ -5,8 +5,8 @@
 <h1 align="center">Eval Dominator</h1>
 
 <p align="center">
-  A lightweight, local-first web playground that wraps<br/>
-  <a href="https://github.com/open-compass/opencompass">OpenCompass</a> into something you can drive from a browser.
+  A lightweight, local-first web evaluation platform for OpenAI-compatible LLMs<br/>
+  with built-in <b>Agent tool-calling evaluation</b>, wrapping <a href="https://github.com/open-compass/opencompass">OpenCompass</a> into a browser-driven closed-loop system.
 </p>
 
 <p align="center">
