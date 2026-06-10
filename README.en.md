@@ -136,10 +136,11 @@ The overview tab has been redesigned with a card-based layout — task info, mod
 
 - ✅ Username + password (bcrypt) + JWT login; default account `admin / admin123` seeded on first start
 - ✅ Evaluation against any OpenAI-compatible remote API (DashScope / OpenAI / DeepSeek / self-hosted vLLM …)
+- ✅ **Agent tool-calling evaluation**: built-in keyword match Evaluator + per-question hit analysis + custom JSONL eval dataset import
 - ✅ Saved model presets, with masked API key on display
 - ✅ Dataset center: built-in demo auto-sync + HuggingFace search & pull + custom JSONL import
 - ✅ Dataset preview: JSONL / CSV in-browser preview, wide-dataset column truncation with warnings
-- ✅ 6 built-in evaluator types (ROUGE / keyword match / Accuracy / EM / BLEU / Chinese ROUGE)
+- ✅ 6 built-in evaluator types (ROUGE / **keyword match (Agent-specific)** / Accuracy / EM / BLEU / Chinese ROUGE)
 - ✅ Task list: search by name/ID, filter by date range / status / dataset
 - ✅ Task detail: card-based overview, five-stage progress bar, metrics with auto percent rendering, artifact preview & download
 - ✅ Per-question analysis: keyword hit/miss visualization, four-tier scoring, quick weak-spot identification
